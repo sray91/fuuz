@@ -6,16 +6,22 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 const muscleIcons = {
-  Quads: '/quads.png',
-  Hamstrings: 'hamstrings.png',
-  Abs: 'abs.png',
-  Chest: 'chest.png',
-  Glutes: 'glutes.png',
-  Back: 'back.png',
-  'Lower back': 'lower-back.png',
-  Shoulders: 'shoulders.png',
-  Triceps: 'triceps.png',
-  Biceps: 'biceps.png',
+  Quadriceps: '/quads.png',
+  Hamstrings: '/hamstrings.png',
+  Abs: '/abs.png',
+  Chest: '/chest.png',
+  Glutes: '/glutes.png',
+  Back: '/back.png',
+  'Lower back': '/lower-back.png',
+  Shoulders: '/shoulders.png',
+  Triceps: '/triceps.png',
+  Biceps: '/biceps.png',
+  Abductors: '/abductors.png',
+  Adductors: '/adductors.png',
+  Calves: '/calves.png',
+  Trapezius: '/traps.png',
+  Forearms: '/forearm.png',
+  Neck: '/neck.png'
 };
 
 export default function DashboardPage() {
@@ -105,8 +111,8 @@ export default function DashboardPage() {
           <Image
             src="/fuuz logo.png"
             alt="logo"
-            width={100}
-            height={100}
+            width={200}
+            height={200}
             className=""
           />
         </div>
@@ -118,7 +124,7 @@ export default function DashboardPage() {
             height={50}
             className="rounded-full mr-4"
           />
-          <p className="text-xl">Hello, {user?.email}</p>
+          <p className="text-xl text-black">Hello, {user?.email}</p>
         </div>
         <nav className="flex flex-col space-y-4">
           <Link href="/workout" className="bg-purple-600 text-white py-3 px-6 rounded-full text-center hover:bg-purple-700 transition-colors">
@@ -141,14 +147,20 @@ export default function DashboardPage() {
         <h2 className="text-4xl font-bold text-white mb-8">Fresh Muscle Groups</h2>
         <div className="grid grid-cols-2 gap-6">
           {muscleGroups.map((muscle) => (
-            <div key={muscle.id} className="bg-black bg-opacity-20 rounded-lg p-4 flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="w-16 h-16 bg-gray-300 rounded-lg mr-4 flex items-center justify-center text-4xl">
-                  {muscleIcons[muscle.name] || '💪'}
-                </div>
-                <span className="text-white text-xl">{muscle.name}</span>
+            <div key={muscle.id} className="bg-black p-4 flex items-center justify-between">
+              <div className="flex items-center justify-center text-4xl">
+                <Image
+                  src={muscleIcons[muscle.name]}
+                  alt="muscle icons"
+                  width={75}
+                  height={75}
+                  className=""
+                />
               </div>
-              <div className="text-white text-2xl font-bold">{muscle.freshness}%</div>
+              <div className="flex flex-wrap">
+                <span className="flex text-white text-xl">{muscle.name} </span>
+                <div className="flex text-white text-2xl font-bold">{muscle.freshness}%</div>
+              </div>
             </div>
           ))}
         </div>
