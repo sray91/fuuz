@@ -19,6 +19,6 @@ export default function SignOut() {
   }
 
   return (
-    <button onClick={handleSignOut} className="bg-purple-600 text-white py-3 px-6 rounded-full text-center hover:bg-purple-700 transition-colors">Sign Out</button>
+    <button onClick={handleSignOut} className="bg-orange-500 text-white py-3 px-6 font-bold rounded-full text-center hover:bg-purple-700 transition-colors">Sign Out</button>
   )
 }

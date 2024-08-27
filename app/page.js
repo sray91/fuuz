@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation'; // Import useRouter
 import { createBrowserSupabaseClientInstance } from '../utils/supabase-browser';
-import Link from 'next/link';
 import Image from 'next/image';
-import SignOut from '@/components/Signout';
+import Navbar from '@/components/Navbar';
 
 const muscleIcons = {
   Quadriceps: '/quads.png',
@@ -119,62 +118,25 @@ export default function DashboardPage() {
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Left Sidebar */}
-      <div className="w-1/4 bg-white p-6 flex flex-col">
-        <div className="flex items-center mb-8">
-          <Image
-            src="/fuuz logo.png"
-            alt="logo"
-            width={200}
-            height={200}
-            className=""
-          />
-        </div>
-        <div className="flex items-center mb-8">
-          <Image
-            src="/avatar-placeholder.png"
-            alt="User Avatar"
-            width={50}
-            height={50}
-            className="rounded-full mr-4"
-          />
-          <p className="text-xl text-black">Hello, {user?.email}</p>
-        </div>
-        <nav className="flex flex-col space-y-4">
-          <Link href="/workout" className="bg-purple-600 text-white py-3 px-6 rounded-full text-center hover:bg-purple-700 transition-colors">
-            Workout
-          </Link>
-          <Link href="/workout-history" className="bg-purple-600 text-white py-3 px-6 rounded-full text-center hover:bg-purple-700 transition-colors">
-            Workout history
-          </Link>
-          <Link href="/goals" className="bg-purple-600 text-white py-3 px-6 rounded-full text-center hover:bg-purple-700 transition-colors">
-            Goals
-          </Link>
-          <Link href="/settings" className="bg-purple-600 text-white py-3 px-6 rounded-full text-center hover:bg-purple-700 transition-colors">
-            Gym settings
-          </Link>
-          <SignOut />
-        </nav>
-      </div>
+      <Navbar user={user}/>
 
       {/* Main Content */}
       <div className="w-3/4 bg-orange-500 p-6 overflow-y-auto">
         <h2 className="text-4xl font-bold text-white mb-8">Fresh Muscle Groups</h2>
         <div className="grid grid-cols-2 gap-6">
           {muscleGroups.map((muscle) => (
-            <div key={muscle.id} className="bg-black p-4 flex items-center justify-between">
-              <div className="flex items-center justify-center text-4xl">
+            <div key={muscle.id} className="bg-black rounded-lg p-4 flex items-center justify-between">
+              <div className="flex items-center">
                 <Image
                   src={muscleIcons[muscle.name]}
-                  alt="muscle icons"
-                  width={75}
-                  height={75}
-                  className=""
+                  alt={muscle.name}
+                  width={64}
+                  height={64}
+                  className="rounded-lg"
                 />
+                <span className="text-white text-xl ml-4">{muscle.name}</span>
               </div>
-              <div className="flex flex-wrap">
-                <span className="flex text-white text-xl">{muscle.name} </span>
-                <div className="flex text-white text-2xl font-bold">{muscle.freshness}%</div>
-              </div>
+              <div className="text-white text-2xl font-bold">{muscle.freshness}%</div>
             </div>
           ))}
         </div>
