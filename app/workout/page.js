@@ -73,8 +73,9 @@ export default function WorkoutPlanningPage() {
   }
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen overflow-y-auto">
       {/* Muscle Groups Column */}
+      <h1 className='text-white text-2xl font-bold py-2 px-4'>Muscle Groups</h1>
       <div className="space-y-2">
         {muscleGroups.map(group => (
           <button
