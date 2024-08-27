@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createBrowserSupabaseClient } from '../../../utils/supabase-browser'
+import { createBrowserSupabaseClientInstance } from '../../utils/supabase-browser';
 import { useRouter } from 'next/navigation'
 
 export default function WorkoutSessionPage({ params }) {
-  const [supabase] = useState(() => createBrowserSupabaseClient())
+  const [supabase] = useState(() => createBrowserSupabaseClientInstance());
   const [workout, setWorkout] = useState(null)
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0)
   const [currentSetIndex, setCurrentSetIndex] = useState(0)

@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createBrowserSupabaseClient } from '../../utils/supabase-browser'
+import { createBrowserSupabaseClientInstance } from '../../utils/supabase-browser';
 
 export default function ProfilePage() {
-  const [supabase] = useState(() => createBrowserSupabaseClient())
+  const [supabase] = useState(() => createBrowserSupabaseClientInstance());
   const [user, setUser] = useState(null)
   const [maxLifts, setMaxLifts] = useState({})
   const [loading, setLoading] = useState(true)
