@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createBrowserSupabaseClientInstance } from '../../utils/supabase-browser';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [supabase] = useState(() => createBrowserSupabaseClientInstance());
+  const router = useRouter();
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -17,9 +19,9 @@ export default function SignIn() {
     if (error) {
       console.error('Error signing in:', error.message);
     } else {
-      // Redirect or update UI
-      console.log('Signed in successfully!');
-    }
+        // Redirect to the main page after successful sign-up
+        router.push('/');
+      }
   };
 
   return (

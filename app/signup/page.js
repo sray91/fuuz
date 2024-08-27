@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createBrowserSupabaseClientInstance } from '../../utils/supabase-browser';
 
 export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [supabase] = useState(() => createBrowserSupabaseClientInstance());
+  const router = useRouter();
 
   const handleSignUp = async (e) => {
     e.preventDefault();
@@ -21,8 +23,7 @@ export default function SignUp() {
       console.error('Error signing up:', error.message);
     } else {
       // Redirect or update UI
-      console.log('Check your email for the login link!');
-    }
+      router.push('/');    }
   };
 
   return (
