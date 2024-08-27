@@ -1,26 +1,26 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { createBrowserSupabaseClient } from '../../utils/supabase-browser'
+import { useState } from 'react';
+import { createBrowserSupabaseClientInstance } from '../../utils/supabase-browser';
 
 export default function SignIn() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [supabase] = useState(() => createBrowserSupabaseClient())
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [supabase] = useState(() => createBrowserSupabaseClientInstance());
 
   const handleSignIn = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
-    })
+    });
     if (error) {
-      console.error('Error signing in:', error.message)
+      console.error('Error signing in:', error.message);
     } else {
       // Redirect or update UI
-      console.log('Signed in successfully!')
+      console.log('Signed in successfully!');
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSignIn}>
@@ -40,5 +40,5 @@ export default function SignIn() {
       />
       <button type="submit">Sign In</button>
     </form>
-  )
+  );
 }
