@@ -1,7 +1,8 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import Navbar from '@/components/Navbar';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -11,19 +12,24 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }) {
-  const supabase = createServerComponentClient({ cookies })
+  const supabase = createServerComponentClient({ cookies });
   
   const {
     data: { session },
-  } = await supabase.auth.getSession()
+  } = await supabase.auth.getSession();
+
+  const user = session?.user;
 
   return (
     <html lang="en">
-      <body>
-        <main>
-          {children}
-        </main>
+      <body className={`${inter.className} w-full h-full overflow-hidden`}>
+        <div className="flex h-full w-full">
+          <Navbar user={user} />
+          <div className="flex-1 bg-orange-500 p-6 overflow-y-auto">            
+            {children}
+          </div>
+        </div>
       </body>
     </html>
-  )
+  );
 }

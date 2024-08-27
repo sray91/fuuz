@@ -14,7 +14,7 @@ export default function SignOut() {
       console.error('Error signing out:', error.message)
     } else {
       // Redirect or update UI
-      router.push('/signin');
+      router.push('/auth/signin');
     }
   }
 

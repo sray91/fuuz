@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation'; // Import useRouter
 import { createBrowserSupabaseClientInstance } from '../utils/supabase-browser';
 import Image from 'next/image';
-import Navbar from '@/components/Navbar';
 
 const muscleIcons = {
   Quadriceps: '/quads.png',
@@ -53,7 +52,7 @@ export default function DashboardPage() {
 
       if (!user) {
         // If no user is found, redirect to the sign-in page
-        router.push('/signin');
+        router.push('/auth/signin');
       } else {
         setUser(user);
       }
@@ -61,7 +60,7 @@ export default function DashboardPage() {
       console.error('Error fetching user:', error);
       setError('Failed to load user data. Please try again.');
       // Redirect to sign-in if there's an error fetching the user
-      router.push('/signin');
+      router.push('/auth/signin');
     } finally {
       setLoading(false);
     }
@@ -117,9 +116,6 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Left Sidebar */}
-      <Navbar user={user}/>
-
       {/* Main Content */}
       <div className="w-3/4 bg-orange-500 p-6 overflow-y-auto">
         <h2 className="text-4xl font-bold text-white mb-8">Fresh Muscle Groups</h2>

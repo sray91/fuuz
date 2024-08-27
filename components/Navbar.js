@@ -6,7 +6,9 @@ export default function Navbar({ user }) {
   return (
     <div className="w-1/4 bg-white p-6 flex flex-col">
       <div className="flex items-center mb-8">
-        <Image src="/fuuz logo.png" alt="logo" width={200} height={200} />
+        <Link href="/" className="">
+          <Image src="/fuuz logo.png" alt="logo" width={200} height={200} />
+        </Link>
       </div>
       <div className="flex items-center mb-8">
         <Image
