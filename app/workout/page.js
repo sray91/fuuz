@@ -49,9 +49,13 @@ export default function WorkoutPlanningPage() {
 
   function selectMuscleGroup(muscleGroup) {
     setSelectedMuscleGroup(muscleGroup);
-    fetchExercisesForMuscleGroup(muscleGroup.id);
+    if (muscleGroup && muscleGroup.muscle_group_id) {
+      fetchExercisesForMuscleGroup(muscleGroup.muscle_group_id);
+    } else {
+      console.error('Invalid muscle group selected:', muscleGroup);
+    }
   }
-
+  
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen bg-orange-500">
@@ -71,24 +75,19 @@ export default function WorkoutPlanningPage() {
   return (
     <div className="flex h-screen">
       {/* Muscle Groups Column */}
-      <div className="w-1/2 bg-orange-500 p-6 overflow-y-auto">
-        <h1 className="text-3xl font-bold text-white mb-6">Plan Your Workout</h1>
-        <div className="space-y-2">
-          {muscleGroups.map(group => (
-            <button
-              key={group.id}
-              onClick={() => selectMuscleGroup(group)}
-              className={`w-full text-left text-white text-xl py-2 px-4 rounded transition-colors ${
-                selectedMuscleGroup?.id === group.id
-                  ? 'bg-orange-700'
-                  : 'hover:bg-orange-600'
-              }`}
-            >
-              {group.name}
-            </button>
-          ))}
-        </div>
-      </div>
+      <div className="space-y-2">
+        {muscleGroups.map(group => (
+          <button
+            key={group.muscle_group_id}
+            onClick={() => selectMuscleGroup(group)}
+            className={`w-full text-left text-white text-xl py-2 px-4 rounded transition-colors ${
+              selectedMuscleGroup?.muscle_group_id === group.muscle_group_id
+                ? 'bg-orange-700'
+                : 'hover:bg-orange-600'
+            }`}
+          >{group.name}</button>
+        ))}
+    </div>
 
       {/* Exercises Column */}
       <div className="w-1/2 bg-gray-50 p-6 overflow-y-auto">
@@ -106,12 +105,12 @@ export default function WorkoutPlanningPage() {
                     key={exercise.id}
                     className="bg-white p-4 rounded shadow-md hover:shadow-lg transition-shadow"
                   >
-                    <h3 className="text-lg font-semibold">{exercise.name}</h3>
+                    <h3 className="text-lg font-semibold text-black">{exercise.name}</h3>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-center py-4">No exercises found for this muscle group.</p>
+              <p className="text-center py-4 text-black">No exercises found for this muscle group.</p>
             )}
           </>
         ) : (
