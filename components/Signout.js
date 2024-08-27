@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { createBrowserSupabaseClient } from '../../utils/supabase-browser'
+import { useRouter } from 'next/navigation';
+import { createBrowserSupabaseClientInstance } from '@/utils/supabase-browser';
 
 export default function SignOut() {
-  const [supabase] = useState(() => createBrowserSupabaseClient())
+  const [supabase] = useState(() => createBrowserSupabaseClientInstance());
+  const router = useRouter();
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut()
@@ -12,11 +14,11 @@ export default function SignOut() {
       console.error('Error signing out:', error.message)
     } else {
       // Redirect or update UI
-      console.log('Signed out successfully!')
+      router.push('/signin');
     }
   }
 
   return (
-    <button onClick={handleSignOut}>Sign Out</button>
+    <button onClick={handleSignOut} className="bg-purple-600 text-white py-3 px-6 rounded-full text-center hover:bg-purple-700 transition-colors">Sign Out</button>
   )
 }

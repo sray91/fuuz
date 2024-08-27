@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation'; // Import useRouter
 import { createBrowserSupabaseClientInstance } from '../utils/supabase-browser';
 import Link from 'next/link';
 import Image from 'next/image';
+import SignOut from '@/components/Signout';
 
 const muscleIcons = {
   Quadriceps: '/quads.png',
@@ -30,6 +32,7 @@ export default function DashboardPage() {
   const [muscleGroups, setMuscleGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const router = useRouter(); // Initialize useRouter
 
   useEffect(() => {
     fetchUser();
@@ -48,10 +51,20 @@ export default function DashboardPage() {
         error,
       } = await supabase.auth.getUser();
       if (error) throw error;
-      setUser(user);
+
+      if (!user) {
+        // If no user is found, redirect to the sign-in page
+        router.push('/signin');
+      } else {
+        setUser(user);
+      }
     } catch (error) {
       console.error('Error fetching user:', error);
       setError('Failed to load user data. Please try again.');
+      // Redirect to sign-in if there's an error fetching the user
+      router.push('/signin');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -139,6 +152,7 @@ export default function DashboardPage() {
           <Link href="/settings" className="bg-purple-600 text-white py-3 px-6 rounded-full text-center hover:bg-purple-700 transition-colors">
             Gym settings
           </Link>
+          <SignOut />
         </nav>
       </div>
 
