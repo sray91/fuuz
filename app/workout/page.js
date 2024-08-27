@@ -99,8 +99,14 @@ export default function WorkoutPlanningPage() {
 
   async function startWorkout() {
     console.log('Starting workout with:', selectedExercises);
-    router.push('/workout-session');
+  
+    // Convert the selected exercises to a string format to pass as a query parameter
+    const workoutData = JSON.stringify(selectedExercises);
+  
+    // Navigate to the workout session page and pass the workout data as a query parameter
+    router.push(`/workout-session?workout=${encodeURIComponent(workoutData)}`);
   }
+  
 
   if (loading) {
     return (
