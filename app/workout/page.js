@@ -1,201 +1,125 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react';
 import { createBrowserSupabaseClientInstance } from '@/utils/supabase-browser';
-import { useRouter } from 'next/navigation'
-import { calculateMFRI } from '../../utils/mfri'
+import { useRouter } from 'next/navigation';
 
-export default function WorkoutPage() {
+export default function WorkoutPlanningPage() {
   const [supabase] = useState(() => createBrowserSupabaseClientInstance());
-  const [muscleGroups, setMuscleGroups] = useState([])
-  const [exercises, setExercises] = useState({})
-  const [selectedExercises, setSelectedExercises] = useState([])
-  const [mfriData, setMfriData] = useState({})
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
+  const [muscleGroups, setMuscleGroups] = useState([]);
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(null);
+  const [exercises, setExercises] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const router = useRouter();
 
   useEffect(() => {
-    fetchMuscleGroups()
-    fetchExercises()
-    fetchLastWorkouts()
-  }, [])
+    fetchMuscleGroups();
+  }, []);
 
   async function fetchMuscleGroups() {
-    const { data, error } = await supabase
-      .from('muscle_groups')
-      .select('*')
-    if (error) console.error('Error fetching muscle groups:', error)
-    else setMuscleGroups(data)
-  }
-
-  async function fetchExercises() {
-    const { data, error } = await supabase
-      .from('exercises')
-      .select('*')
-    if (error) console.error('Error fetching exercises:', error)
-    else {
-      const exercisesByMuscleGroup = data.reduce((acc, exercise) => {
-        if (!acc[exercise.muscle_group_id]) acc[exercise.muscle_group_id] = []
-        acc[exercise.muscle_group_id].push(exercise)
-        return acc
-      }, {})
-      setExercises(exercisesByMuscleGroup)
+    try {
+      const { data, error } = await supabase.from('muscle_groups').select('*');
+      if (error) throw error;
+      setMuscleGroups(data);
+    } catch (error) {
+      console.error('Error fetching muscle groups:', error);
+      setError('Failed to load muscle groups. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false)
   }
 
-  async function fetchLastWorkouts() {
-    const { data, error } = await supabase
-      .from('workouts')
-      .select(`
-        *,
-        workout_exercises (
-          *,
-          exercise (*)
-        )
-      `)
-      .order('date', { ascending: false })
-      .limit(1)
-
-    if (error) {
-      console.error('Error fetching last workouts:', error)
-      return
+  async function fetchExercisesForMuscleGroup(muscleGroupId) {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('exercises')
+        .select('*')
+        .eq('muscle_group_id', muscleGroupId);
+      if (error) throw error;
+      setExercises(data);
+    } catch (error) {
+      console.error('Error fetching exercises:', error);
+      setError('Failed to load exercises. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    const mfri = {}
-    muscleGroups.forEach(group => {
-      mfri[group.id] = calculateMFRI(
-        data.find(workout => 
-          workout.workout_exercises.some(ex => ex.exercise.muscle_group_id === group.id)
-        ),
-        new Date()
-      )
-    })
-
-    setMfriData(mfri)
   }
 
-  function toggleExercise(exercise) {
-    setSelectedExercises(prev => {
-      const exists = prev.find(e => e.id === exercise.id)
-      if (exists) {
-        return prev.filter(e => e.id !== exercise.id)
-      } else {
-        return [...prev, { ...exercise, sets: 3, reps: 10, weight: 0 }]
-      }
-    })
+  function selectMuscleGroup(muscleGroup) {
+    setSelectedMuscleGroup(muscleGroup);
+    fetchExercisesForMuscleGroup(muscleGroup.id);
   }
 
-  function updateExerciseDetails(id, field, value) {
-    setSelectedExercises(prev => 
-      prev.map(ex => 
-        ex.id === id ? { ...ex, [field]: parseInt(value) } : ex
-      )
-    )
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-orange-500">
+        <div className="text-white text-2xl">Loading...</div>
+      </div>
+    );
   }
 
-  async function startWorkout() {
-    const { data, error } = await supabase
-      .from('workouts')
-      .insert({ user_id: supabase.auth.user().id, date: new Date().toISOString() })
-      .select()
-
-    if (error) {
-      console.error('Error creating workout:', error)
-      return
-    }
-
-    const workoutId = data[0].id
-
-    for (let exercise of selectedExercises) {
-      const { error } = await supabase
-        .from('workout_exercises')
-        .insert({
-          workout_id: workoutId,
-          exercise_id: exercise.id,
-          sets: exercise.sets,
-          reps: exercise.reps,
-          weight: exercise.weight
-        })
-
-      if (error) {
-        console.error('Error adding exercise to workout:', error)
-      }
-    }
-
-    router.push(`/workout-session/${workoutId}`)
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-orange-500">
+        <div className="text-white text-2xl">{error}</div>
+      </div>
+    );
   }
-
-  if (loading) return <div>Loading...</div>
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Workout</h1>
-      {muscleGroups.map(group => (
-        <div key={group.id} className="mb-4">
-          <h2 className="text-xl font-semibold mb-2">
-            {group.name} 
-            <span className="ml-2 text-sm font-normal">
-              Freshness: {mfriData[group.id] || 'N/A'}%
-            </span>
-          </h2>
-          <div className="grid grid-cols-2 gap-2">
-            {exercises[group.id]?.map(exercise => (
-              <button
-                key={exercise.id}
-                onClick={() => toggleExercise(exercise)}
-                className={`p-2 rounded ${
-                  selectedExercises.find(e => e.id === exercise.id)
-                    ? 'bg-purple-500 text-white'
-                    : 'bg-gray-200'
-                }`}
-              >
-                {exercise.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      ))}
-
-      {selectedExercises.length > 0 && (
-        <div className="mt-4">
-          <h2 className="text-xl font-semibold mb-2">Selected Exercises</h2>
-          {selectedExercises.map(exercise => (
-            <div key={exercise.id} className="mb-2">
-              <p>{exercise.name}</p>
-              <div className="flex space-x-2">
-                <input
-                  type="number"
-                  value={exercise.sets}
-                  onChange={(e) => updateExerciseDetails(exercise.id, 'sets', e.target.value)}
-                  className="w-20 p-1 border rounded"
-                  placeholder="Sets"
-                />
-                <input
-                  type="number"
-                  value={exercise.reps}
-                  onChange={(e) => updateExerciseDetails(exercise.id, 'reps', e.target.value)}
-                  className="w-20 p-1 border rounded"
-                  placeholder="Reps"
-                />
-                <input
-                  type="number"
-                  value={exercise.weight}
-                  onChange={(e) => updateExerciseDetails(exercise.id, 'weight', e.target.value)}
-                  className="w-20 p-1 border rounded"
-                  placeholder="Weight"
-                />
-              </div>
-            </div>
+    <div className="flex h-screen">
+      {/* Muscle Groups Column */}
+      <div className="w-1/2 bg-orange-500 p-6 overflow-y-auto">
+        <h1 className="text-3xl font-bold text-white mb-6">Plan Your Workout</h1>
+        <div className="space-y-2">
+          {muscleGroups.map(group => (
+            <button
+              key={group.id}
+              onClick={() => selectMuscleGroup(group)}
+              className={`w-full text-left text-white text-xl py-2 px-4 rounded transition-colors ${
+                selectedMuscleGroup?.id === group.id
+                  ? 'bg-orange-700'
+                  : 'hover:bg-orange-600'
+              }`}
+            >
+              {group.name}
+            </button>
           ))}
-          <button
-            onClick={startWorkout}
-            className="mt-4 bg-green-500 text-white p-2 rounded"
-          >
-            Start Workout
-          </button>
         </div>
-      )}
+      </div>
+
+      {/* Exercises Column */}
+      <div className="w-1/2 bg-gray-50 p-6 overflow-y-auto">
+        {selectedMuscleGroup ? (
+          <>
+            <h2 className="text-2xl font-bold mb-4 text-blue-300">
+              {selectedMuscleGroup.name} Exercises
+            </h2>
+            {loading ? (
+              <div className="text-center py-4">Loading exercises...</div>
+            ) : exercises.length > 0 ? (
+              <div className="space-y-2">
+                {exercises.map(exercise => (
+                  <div
+                    key={exercise.id}
+                    className="bg-white p-4 rounded shadow-md hover:shadow-lg transition-shadow"
+                  >
+                    <h3 className="text-lg font-semibold">{exercise.name}</h3>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center py-4">No exercises found for this muscle group.</p>
+            )}
+          </>
+        ) : (
+          <div className="text-center py-4 text-gray-500">
+            Select a muscle group to see exercises
+          </div>
+        )}
+      </div>
     </div>
-  )
+  );
 }
