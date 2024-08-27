@@ -14,18 +14,34 @@ export const metadata = {
 export default async function RootLayout({ children }) {
   const supabase = createServerComponentClient({ cookies });
   
+  // Use getUser to securely retrieve the authenticated user
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+    error
+  } = await supabase.auth.getUser();
 
-  const user = session?.user;
+  if (error) {
+    console.error('Error fetching user:', error);
+    return (
+      <html lang="en">
+        <body className={inter.className}>
+          <div className="flex items-center justify-center h-screen">
+            <p className="text-red-600">Error fetching user data. Please try again later.</p>
+          </div>
+        </body>
+      </html>
+    );
+  }
 
   return (
     <html lang="en">
       <body className={`${inter.className} w-full h-full overflow-hidden`}>
         <div className="flex h-full w-full">
+          {/* Use Navbar Component */}
           <Navbar user={user} />
-          <div className="flex-1 bg-orange-500 p-6 overflow-y-auto">            
+          
+          {/* Main Content */}
+          <div className="flex-1 bg-orange-500 p-6 overflow-y-auto">
             {children}
           </div>
         </div>
