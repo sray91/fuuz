@@ -6,16 +6,16 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 const muscleIcons = {
-  Quads: '🦵',
-  Hamstrings: '🦵',
-  Abs: '🦵',
-  Chest: '💪',
-  Glutes: '🍑',
-  Back: '🔙',
-  'Lower back': '⬇️',
-  Shoulders: '💪',
-  Triceps: '💪',
-  Biceps: '💪',
+  Quads: '/quads.png',
+  Hamstrings: 'hamstrings.png',
+  Abs: 'abs.png',
+  Chest: 'chest.png',
+  Glutes: 'glutes.png',
+  Back: 'back.png',
+  'Lower back': 'lower-back.png',
+  Shoulders: 'shoulders.png',
+  Triceps: 'triceps.png',
+  Biceps: 'biceps.png',
 };
 
 export default function DashboardPage() {
@@ -102,10 +102,13 @@ export default function DashboardPage() {
       {/* Left Sidebar */}
       <div className="w-1/4 bg-white p-6 flex flex-col">
         <div className="flex items-center mb-8">
-          <div className="text-4xl font-bold mr-2">⚡</div>
-          <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-purple-600">
-            FUUZ
-          </h1>
+          <Image
+            src="/fuuz logo.png"
+            alt="logo"
+            width={100}
+            height={100}
+            className=""
+          />
         </div>
         <div className="flex items-center mb-8">
           <Image
@@ -127,7 +130,7 @@ export default function DashboardPage() {
           <Link href="/goals" className="bg-purple-600 text-white py-3 px-6 rounded-full text-center hover:bg-purple-700 transition-colors">
             Goals
           </Link>
-          <Link href="/gym-settings" className="bg-purple-600 text-white py-3 px-6 rounded-full text-center hover:bg-purple-700 transition-colors">
+          <Link href="/settings" className="bg-purple-600 text-white py-3 px-6 rounded-full text-center hover:bg-purple-700 transition-colors">
             Gym settings
           </Link>
         </nav>
