@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createBrowserSupabaseClientInstance } from '@/utils/supabase-browser';
 import { useRouter } from 'next/navigation';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function WorkoutPlanningPage() {
   const [supabase] = useState(() => createBrowserSupabaseClientInstance());
@@ -21,7 +22,7 @@ export default function WorkoutPlanningPage() {
   useEffect(() => {
     console.log('Selected exercises updated:', selectedExercises);
   }, [selectedExercises]);
-
+  
   async function fetchMuscleGroups() {
     try {
       const { data, error } = await supabase.from('muscle_groups').select('*');

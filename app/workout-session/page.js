@@ -49,12 +49,21 @@ export default function ActiveWorkoutSessionPage() {
       // Insert each exercise into the workout_exercises table
       for (let i = 0; i < parsedWorkout.length; i++) {
         const exercise = parsedWorkout[i];
-        await supabase.from('workout_exercises').insert({
-          workout_exercise_id: uuidv4(),
-          workout_id: workoutId,
-          exercise_id: exercise.exercise_id,
-          order_in_workout: i + 1,
-        });
+        const { error: exerciseError } = await supabase
+          .from('workout_exercises')
+          .insert({
+            workout_exercise_id: uuidv4(), // unique ID for this row
+            workout_id: workoutId, // reference to the workout ID
+            exercise_id: exercise.exercise_id, // ID of the exercise
+            order_in_workout: i + 1, // order of the exercise in the workout
+          });
+
+        if (exerciseError) {
+          console.error('Error inserting workout exercise:', exerciseError);
+          return;
+        } else {
+          console.log('Inserted exercise:', exercise.name, 'into workout:', workoutId);
+        }
       }
 
       // Store the workout ID in state to be used later
