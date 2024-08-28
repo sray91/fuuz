@@ -157,14 +157,14 @@ export default function ActiveWorkoutSessionPage() {
           type="number"
           value={weight}
           onChange={(e) => setWeight(e.target.value)}
-          className="w-24 p-2 border rounded mr-2"
+          className="w-24 p-2 border rounded mr-2 text-black"
           placeholder="Weight (lbs)"
         />
         <input
           type="number"
           value={reps}
           onChange={(e) => setReps(e.target.value)}
-          className="w-24 p-2 border rounded"
+          className="w-24 p-2 border rounded text-black"
           placeholder="Reps"
         />
       </div>
