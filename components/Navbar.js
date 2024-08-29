@@ -1,69 +1,101 @@
-'use client'
+'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import SignOut from '@/components/Signout';
 
-export default function Navbar({ user }) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+export default function Navbar({ user }) { // Assuming you pass the user prop
+  const [isOpen, setIsOpen] = useState(false);
 
   const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+    setIsOpen(!isOpen);
+  };
+
+  const closeMenu = () => {
+    setIsOpen(false);
   };
 
   return (
-    <div className="bg-white p-4 md:p-6 md:w-1/4">
+    <nav className="bg-orange-500 p-4">
       <div className="flex justify-between items-center mb-8">
+        {/* Logo */}
         <Link href="/" className="">
-          <Image src="/fuuz logo.png" alt="logo" width={200} height={200} />
+          <Image src="/fuuz logo.png" alt="logo" width={150} height={150} />
         </Link>
-        <button 
-          className="md:hidden text-black"
-          onClick={toggleMenu}
-        >
-          {isMenuOpen ? (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+
+        {/* Hamburger Icon for Mobile */}
+        <div className="block lg:hidden">
+          <button onClick={toggleMenu} className="text-white focus:outline-none">
+            <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={isOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16m-7 6h7"}></path>
             </svg>
-          ) : (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          )}
-        </button>
-      </div>
-      <div className={`${isMenuOpen ? 'block' : 'hidden'} md:block`}>
-        <div className="flex items-center mb-8">
-          <Image
-            src={user?.avatar_url || '/avatar-placeholder.png'}
-            alt="User Avatar"
-            width={50}
-            height={50}
-            className="rounded-full mr-4"
-          />
-          <p className="text-xl text-black">Hello, {user?.email || "User"}</p>
+          </button>
         </div>
-        <nav className="flex flex-col space-y-4">
-          <Link href="/workout" className="bg-purple-600 py-3 px-6 rounded-full hover:bg-purple-700 transition-colors flex items-center">
-            <Image src="/icons/workout.png" alt="Workout" width={50} height={50} className="mr-2" />
-            <h1 className="text-black font-bold text-xl text-center">Workout</h1>
-          </Link>
-          <Link href="/workout-history" className="bg-purple-600 py-3 px-6 rounded-full text-center hover:bg-purple-700 transition-colors flex items-center">
-            <Image src="/icons/history.png" alt="Workout History" width={50} height={50} className="mr-2" />
-            <h1 className="text-black font-bold text-xl text-center">Workout history</h1>
-          </Link>
-          <Link href="/goals" className="bg-purple-600 py-3 px-6 rounded-full text-center hover:bg-purple-700 transition-colors flex items-center">
-            <Image src="/icons/goals.png" alt="Goals" width={50} height={50} className="mr-2" />
-            <h1 className="text-black font-bold text-xl text-center">Goals</h1>
-          </Link>
-          <Link href="/settings" className="bg-purple-600 py-3 px-6 rounded-full text-center hover:bg-purple-700 transition-colors flex items-center">
-            <Image src="/icons/settings.png" alt="Settings" width={50} height={50} className="mr-2" />
-            <h1 className="text-black font-bold text-xl text-center">Settings</h1>
-          </Link>
-          <SignOut />
-        </nav>
       </div>
-    </div>
+
+      {/* User Info */}
+      <div className="flex items-center mb-8 lg:mb-0">
+        <Image
+          src={user?.avatar_url || '/avatar-placeholder.png'}
+          alt="User Avatar"
+          width={50}
+          height={50}
+          className="rounded-full mr-4"
+        />
+        <p className="text-xl text-black">Hello, {user?.email || "User"}</p>
+      </div>
+
+      {/* Desktop Menu */}
+      <div className="hidden lg:flex lg:flex-col lg:space-y-4">
+        <Link href="/workout" className="bg-purple-600 py-3 px-6 rounded-full hover:bg-purple-700 transition-colors flex items-center">
+          <Image src="/icons/workout.png" alt="Workout" width={50} height={50} className="mr-2" />
+          <h1 className="text-black font-bold text-xl">Workout</h1>
+        </Link>
+        <Link href="/workout-history" className="bg-purple-600 py-3 px-6 rounded-full hover:bg-purple-700 transition-colors flex items-center">
+          <Image src="/icons/history.png" alt="Workout History" width={50} height={50} className="mr-2" />
+          <h1 className="text-black font-bold text-xl">Workout History</h1>
+        </Link>
+        <Link href="/goals" className="bg-purple-600 py-3 px-6 rounded-full hover:bg-purple-700 transition-colors flex items-center">
+          <Image src="/icons/goals.png" alt="Goals" width={50} height={50} className="mr-2" />
+          <h1 className="text-black font-bold text-xl">Goals</h1>
+        </Link>
+        <Link href="/settings" className="bg-purple-600 py-3 px-6 rounded-full hover:bg-purple-700 transition-colors flex items-center">
+          <Image src="/icons/settings.png" alt="Settings" width={50} height={50} className="mr-2" />
+          <h1 className="text-black font-bold text-xl">Settings</h1>
+        </Link>
+        <Link href="/logout" className="bg-purple-600 py-3 px-6 rounded-full hover:bg-purple-700 transition-colors flex items-center">
+          <Image src="/icons/logout.png" alt="Sign Out" width={50} height={50} className="mr-2" />
+          <h1 className="text-black font-bold text-xl">Sign Out</h1>
+        </Link>
+      </div>
+
+      {/* Mobile Menu */}
+      {isOpen && (
+        <div className="fixed inset-0 bg-orange-500 z-50 flex flex-col items-center justify-center">
+          <div className="flex flex-col items-center space-y-8 text-white text-2xl">
+            <Link href="/workout" onClick={closeMenu} className="hover:text-gray-200">
+              Workout
+            </Link>
+            <Link href="/workout-history" onClick={closeMenu} className="hover:text-gray-200">
+              Workout History
+            </Link>
+            <Link href="/goals" onClick={closeMenu} className="hover:text-gray-200">
+              Goals
+            </Link>
+            <Link href="/settings" onClick={closeMenu} className="hover:text-gray-200">
+              Settings
+            </Link>
+            <Link href="/logout" onClick={closeMenu} className="hover:text-gray-200">
+              Sign Out
+            </Link>
+          </div>
+          <button onClick={toggleMenu} className="absolute top-4 right-4 text-white focus:outline-none">
+            <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      )}
+    </nav>
   );
 }
