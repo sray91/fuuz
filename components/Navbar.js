@@ -64,7 +64,6 @@ export default function Navbar({ user }) {
           <h1 className="text-black font-bold text-xl">Settings</h1>
         </Link>
         <Link href="/logout" className="bg-purple-600 py-3 px-6 rounded-full hover:bg-purple-700 transition-colors flex items-center">
-          <Image src="/icons/logout.png" alt="Sign Out" width={50} height={50} className="mr-2" />
           <h1 className="text-black font-bold text-xl">Sign Out</h1>
         </Link>
       </div>
