@@ -83,15 +83,15 @@ export default function ActiveWorkoutSessionPage() {
       console.error('No current workout or exercise');
       return;
     }
-
+  
     const currentExercise = currentWorkout.exercises[currentExerciseIndex];
     const workoutExerciseId = await fetchWorkoutExerciseId(currentWorkout.workout_id, currentExercise.exercise_id);
-
+  
     if (!workoutExerciseId) {
       console.error('Failed to fetch workout exercise ID');
       return;
     }
-
+  
     const newSet = {
       set_id: uuidv4(),
       workout_exercise_id: workoutExerciseId,
@@ -101,20 +101,20 @@ export default function ActiveWorkoutSessionPage() {
       status: 'completed',
     };
 
-    console.log('Workout exercise ID:', workoutExerciseId);
+    console.log('New set object:', JSON.stringify(newSet, null, 2));
 
-    const { error } = await supabase.from('sets').insert(newSet);
-
+    const { data, error } = await supabase.from('sets').insert(newSet);
     if (error) {
-      console.error('Error logging set:', error);
-      return;
+      console.error('Supabase Error:', error.message, error.details);
+    } else {
+      console.log('Set logged successfully');
     }
-
+  
     setCompletedSets((prev) => [
       ...prev,
       { ...newSet, exerciseName: currentExercise.name, setNumber: currentSetIndex + 1 },
     ]);
-
+  
     if (currentSetIndex < currentExercise.sets - 1) {
       setCurrentSetIndex(currentSetIndex + 1);
     } else if (currentExerciseIndex < currentWorkout.exercises.length - 1) {
@@ -123,10 +123,10 @@ export default function ActiveWorkoutSessionPage() {
     } else {
       await finishWorkout();
     }
-
+  
     setWeight('');
     setReps('');
-  }
+  }  
 
   async function fetchWorkoutExerciseId(workoutId, exerciseId) {
     const { data, error } = await supabase

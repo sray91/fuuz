@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react';
 import { createBrowserSupabaseClientInstance } from '@/utils/supabase-browser';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
@@ -25,23 +25,33 @@ export default function WorkoutHistoryPage() {
         workout_id,
         date,
         workout_exercises (
+          workout_exercise_id,
           exercise_id,
-          exercise (name)
+          exercises (name),
+          sets (
+            set_id,
+            reps,
+            weight,
+            rest_time,
+            status
+          )
         )
       `)
       .order('date', { ascending: false });
-
+  
     if (error) {
-      console.error('Error fetching workouts:', error);
+      console.error('Error fetching workouts:', error.message, error.details);
       setLoading(false);
       return;
     }
-
+  
+    console.log("Fetched workouts:", JSON.stringify(data, null, 2));
+  
     setWorkouts(data);
     const dates = data.map(workout => new Date(workout.date).toDateString());
     setWorkoutDates(dates);
     setLoading(false);
-  }
+  }  
 
   function handleDateChange(date) {
     setSelectedDate(date);
@@ -101,18 +111,19 @@ export default function WorkoutHistoryPage() {
               Workout Details for {new Date(selectedWorkout.date).toLocaleDateString()}
             </h2>
             <ul>
-              {selectedWorkout.workout_exercises.map((exercise, idx) => (
-                <li key={idx} className="mb-2">
-                  <h3 className="font-semibold text-lg">{exercise.exercise.name}</h3>
-                  <ul className="ml-4">
-                    {exercise.sets?.map((set, setIndex) => (
-                      <li key={setIndex}>
-                        Set {setIndex + 1}: {set.reps} reps @ {set.weight} lbs
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ))}
+            {selectedWorkout.workout_exercises.map((exercise, idx) => (
+              <li key={idx} className="mb-2">
+                <h3 className="font-semibold text-lg">
+                  {exercise?.exercise?.name || 'Exercise name not available'}
+                </h3>
+                <ul className="ml-4">
+                  {exercise.sets?.map((set, setIndex) => (
+                    <li key={setIndex}>
+                      Set {setIndex + 1}: {set.reps} reps @ {set.weight} lbs
+                    </li>
+                  ))}
+                </ul>
+              </li>))}
             </ul>
           </div>
         )}
