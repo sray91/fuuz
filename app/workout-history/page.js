@@ -87,7 +87,7 @@ export default function WorkoutHistoryPage() {
         tileContent={tileContent}
         className="mx-auto text-black"
       />
-      <div className="mt-4">
+      <div className="mt-4 overflow-y-auto">
         {workoutsOnSelectedDate.length > 0 ? (
           workoutsOnSelectedDate.map((workout, index) => (
             <div
