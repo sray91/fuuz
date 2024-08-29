@@ -80,15 +80,18 @@ export default function WorkoutPlanningPage() {
     });
   }, []);
 
-  const updateExerciseDetails = useCallback((exerciseId, field, value) => {
-    setSelectedExercises(prev => {
-      const updated = prev.map(ex =>
-        ex.exercise_id === exerciseId ? { ...ex, [field]: parseInt(value) } : ex
+  function updateExerciseDetails(exerciseId, field, value) {
+    const numericValue = Number(value);
+    if (!isNaN(numericValue)) {
+      setSelectedExercises(prev =>
+        prev.map(ex =>
+          ex.id === exerciseId ? { ...ex, [field]: numericValue } : ex
+        )
       );
-      console.log('Updated exercise details:', updated);
-      return updated;
-    });
-  }, []);
+    } else {
+      console.warn(`Invalid ${field} value: ${value}`);
+    }
+  }
 
   const deleteExercise = useCallback((exerciseId) => {
     setSelectedExercises(prev => {
@@ -102,10 +105,11 @@ export default function WorkoutPlanningPage() {
     console.log('Starting workout with:', selectedExercises);
   
     // Convert the selected exercises to a string format to pass as a query parameter
-    const workoutData = JSON.stringify(selectedExercises);
+    //const workoutData = JSON.stringify(selectedExercises);
   
     // Navigate to the workout session page and pass the workout data as a query parameter
-    router.push(`/workout-session?workout=${encodeURIComponent(workoutData)}`);
+    localStorage.setItem('workoutData', JSON.stringify(selectedExercises));
+    router.push('/workout-session');
   }
   
 

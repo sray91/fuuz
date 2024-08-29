@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createBrowserSupabaseClientInstance } from '@/utils/supabase-browser';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function ActiveWorkoutSessionPage() {
@@ -14,99 +14,116 @@ export default function ActiveWorkoutSessionPage() {
   const [weight, setWeight] = useState('');
   const [reps, setReps] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
-    fetchCurrentWorkout();
+    const workoutData = localStorage.getItem('workoutData');
+    console.log('Retrieved workout data:', workoutData);
+    if (workoutData) {
+      fetchCurrentWorkout(JSON.parse(workoutData));
+    } else {
+      setError('No workout data found. Please start a new workout.');
+      setLoading(false);
+    }
   }, []);
 
-  async function fetchCurrentWorkout() {
-    const workoutData = searchParams.get('workout');
-    if (workoutData) {
-      const parsedWorkout = JSON.parse(workoutData);
-      setCurrentWorkout({ exercises: parsedWorkout });
-      setLoading(false);
+  async function fetchCurrentWorkout(parsedWorkout) {
+    console.log('Fetching current workout...');
+    console.log('Parsed workout:', parsedWorkout);
 
-      // Get the current user
+    try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('User not found');
-        return;
+        throw new Error('User not found');
       }
 
-      // Insert the workout into the workouts table
-      const workoutId = uuidv4();  // Generate a UUID for the workout
+      const workoutId = uuidv4();
+      const { data: insertedWorkout, error: workoutError } = await supabase
+        .from('workouts')
+        .insert({
+          workout_id: workoutId,
+          user_id: user.id,
+          date: new Date().toISOString(),
+          duration: null,
+          status: 'in_progress',
+        })
+        .select()
+        .single();
 
-      await supabase.from('workouts').insert({
-        workout_id: workoutId,
-        user_id: user.id,
-        date: new Date(),
-        duration: null, // Can update this at the end
-        status: 'in-progress',
-      });
+      if (workoutError) throw workoutError;
 
-      // Insert each exercise into the workout_exercises table
+      console.log('Inserted workout:', insertedWorkout);
+
       for (let i = 0; i < parsedWorkout.length; i++) {
         const exercise = parsedWorkout[i];
         const { error: exerciseError } = await supabase
           .from('workout_exercises')
           .insert({
-            workout_exercise_id: uuidv4(), // unique ID for this row
-            workout_id: workoutId, // reference to the workout ID
-            exercise_id: exercise.exercise_id, // ID of the exercise
-            order_in_workout: i + 1, // order of the exercise in the workout
+            workout_exercise_id: uuidv4(),
+            workout_id: workoutId,
+            exercise_id: exercise.exercise_id,
+            order_in_workout: i + 1,
           });
 
-        if (exerciseError) {
-          console.error('Error inserting workout exercise:', exerciseError);
-          return;
-        } else {
-          console.log('Inserted exercise:', exercise.name, 'into workout:', workoutId);
-        }
+        if (exerciseError) throw exerciseError;
       }
 
-      // Store the workout ID in state to be used later
-      setCurrentWorkout((prev) => ({ ...prev, workoutId }));
-    } else {
-      console.error('No workout data found.');
+      setCurrentWorkout({ ...insertedWorkout, exercises: parsedWorkout });
+    } catch (error) {
+      console.error('Error in fetchCurrentWorkout:', error);
+      setError(`Failed to initialize workout: ${error.message}`);
+    } finally {
       setLoading(false);
     }
   }
 
   async function logSet() {
-    const currentExercise = currentWorkout.exercises[currentExerciseIndex];
-    const workoutExerciseId = await fetchWorkoutExerciseId(currentWorkout.workoutId, currentExercise.exercise_id);
+    if (!currentWorkout || !currentWorkout.exercises[currentExerciseIndex]) {
+      console.error('No current workout or exercise');
+      return;
+    }
 
-    // Insert the set data into the sets table
+    const currentExercise = currentWorkout.exercises[currentExerciseIndex];
+    const workoutExerciseId = await fetchWorkoutExerciseId(currentWorkout.workout_id, currentExercise.exercise_id);
+
+    if (!workoutExerciseId) {
+      console.error('Failed to fetch workout exercise ID');
+      return;
+    }
+
     const newSet = {
       set_id: uuidv4(),
       workout_exercise_id: workoutExerciseId,
       reps: parseInt(reps, 10),
       weight: parseFloat(weight),
-      rest_time: null, // You can calculate this if you want to track rest time
+      rest_time: null,
       status: 'completed',
     };
-    await supabase.from('sets').insert(newSet);
 
-    // Add the set to the completed sets
+    console.log('Workout exercise ID:', workoutExerciseId);
+
+    const { error } = await supabase.from('sets').insert(newSet);
+
+    if (error) {
+      console.error('Error logging set:', error);
+      return;
+    }
+
     setCompletedSets((prev) => [
       ...prev,
       { ...newSet, exerciseName: currentExercise.name, setNumber: currentSetIndex + 1 },
     ]);
 
-    // Move to next set or exercise
     if (currentSetIndex < currentExercise.sets - 1) {
       setCurrentSetIndex(currentSetIndex + 1);
     } else if (currentExerciseIndex < currentWorkout.exercises.length - 1) {
       setCurrentExerciseIndex(currentExerciseIndex + 1);
       setCurrentSetIndex(0);
     } else {
-      // Workout complete
-      setCurrentSetIndex(currentSetIndex + 1); // Just to trigger a rerender for the "Finish Workout" button
+      await finishWorkout();
     }
 
-    // Reset inputs
     setWeight('');
     setReps('');
   }
@@ -128,22 +145,34 @@ export default function ActiveWorkoutSessionPage() {
   }
 
   async function finishWorkout() {
-    // Update workout status to 'completed' and duration
-    await supabase
+    if (!currentWorkout) {
+      console.error('No current workout to finish');
+      return;
+    }
+
+    const { error } = await supabase
       .from('workouts')
       .update({
         status: 'completed',
         duration: null, // You can calculate and set the duration here
       })
-      .eq('workout_id', currentWorkout.workoutId);
+      .eq('workout_id', currentWorkout.workout_id);
+
+    if (error) {
+      console.error('Error finishing workout:', error);
+      return;
+    }
 
     console.log('Workout completed!');
     router.push('/workout-history');
   }
 
-  if (loading) return <div>Loading workout...</div>;
+  if (loading) return <div>Loading workout... Please wait.</div>;
+  if (error) return <div className="text-red-500">Error: {error}</div>;
+  if (!currentWorkout) return <div>No workout data available. Please start a new workout.</div>;
 
   const currentExercise = currentWorkout.exercises[currentExerciseIndex];
+  if (!currentExercise) return <div>No exercises found in the workout.</div>;
 
   return (
     <div className="p-4">
@@ -175,7 +204,6 @@ export default function ActiveWorkoutSessionPage() {
         Log Set
       </button>
 
-      {/* Display Completed Sets */}
       <div className="mb-4">
         <h2 className="text-xl font-semibold mb-2">Completed Sets</h2>
         {completedSets.map((set, index) => (
@@ -186,10 +214,8 @@ export default function ActiveWorkoutSessionPage() {
         ))}
       </div>
 
-      {/* Show Finish Workout Button */}
       {currentExerciseIndex === currentWorkout.exercises.length - 1 &&
-        currentSetIndex === currentExercise.sets &&
-        (
+        currentSetIndex === currentExercise.sets && (
           <button
             onClick={finishWorkout}
             className="bg-blue-500 text-white p-2 rounded"
