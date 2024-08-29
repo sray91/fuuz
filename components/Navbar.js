@@ -16,16 +16,16 @@ export default function Navbar({ user }) {
   };
 
   return (
-    <nav className="bg-white p-4">
-      <div className="flex justify-between items-center mb-8">
+    <nav className="bg-white p-4 lg:w-64">
+      <div className="flex justify-between items-center">
         {/* Logo */}
         <Link href="/" className="">
-          <Image src="/fuuz logo.png" alt="logo" width={150} height={150} />
+          <Image src="/fuuz logo.png" alt="logo" width={120} height={120} />
         </Link>
 
         {/* Hamburger Icon for Mobile */}
         <div className="block lg:hidden">
-          <button onClick={toggleMenu} className="text-white focus:outline-none">
+          <button onClick={toggleMenu} className="text-black focus:outline-none">
             <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={isOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16m-7 6h7"}></path>
             </svg>
@@ -46,7 +46,7 @@ export default function Navbar({ user }) {
       </div>
 
       {/* Desktop Menu */}
-      <div className="hidden lg:flex lg:flex-col lg:space-y-4">
+      <div className="hidden lg:flex lg:flex-col lg:space-y-4 mt-8">
         <Link href="/workout" className="bg-purple-600 py-3 px-6 rounded-full hover:bg-purple-700 transition-colors flex items-center">
           <Image src="/icons/workout.png" alt="Workout" width={50} height={50} className="mr-2" />
           <h1 className="text-black font-bold text-xl">Workout</h1>
@@ -101,7 +101,7 @@ export default function Navbar({ user }) {
             </Link>
           </div>
 
-          <button onClick={toggleMenu} className="absolute top-4 right-4 text-white focus:outline-none">
+          <button onClick={toggleMenu} className="absolute top-4 right-4 text-black focus:outline-none">
             <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>

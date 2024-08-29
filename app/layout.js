@@ -22,16 +22,15 @@ export default async function RootLayout({ children }) {
 
   return (
     <html lang="en">
-      <body className={`${inter.className} w-full h-full overflow-hidden`}>
-        <div className="flex h-full w-full">
-          {/* Use NavbarWrapper Component */}
-          <NavbarWrapper user={user} />
-          
-          {/* Main Content */}
-          <div className="flex-1 bg-orange-500 p-6 overflow-y-auto">
-            {children}
-          </div>
+      <body className={`${inter.className} w-full h-screen overflow-hidden`}>
+      <div className="flex flex-col lg:flex-row h-full w-full">
+        {/* Use NavbarWrapper Component */}
+        <NavbarWrapper user={user} />
+        {/* Main Content */}
+        <div className="flex-1 bg-orange-500 p-6 overflow-y-auto">
+          {children}
         </div>
+      </div>
       </body>
     </html>
   );
