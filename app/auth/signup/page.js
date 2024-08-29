@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserSupabaseClientInstance } from '@/utils/supabase-browser';
+import Image from 'next/image';
 
 export default function SignUp() {
   const [email, setEmail] = useState('');
@@ -41,6 +42,7 @@ export default function SignUp() {
   return (
     <div className='flex flex-col items-center justify-center min-h-screen bg-gray-100'>
       <form onSubmit={handleSignUp} className='flex flex-col space-y-4'>
+        <Image src="/fuuz logo.png" alt="logo" width={150} height={150} />
         <input
           type="email"
           value={email}

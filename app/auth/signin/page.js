@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserSupabaseClientInstance } from '@/utils/supabase-browser';
+import Image from 'next/image';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -40,14 +41,15 @@ export default function SignIn() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <form onSubmit={handleSignIn} className="flex flex-col space-y-4">
+      <Image src="/fuuz logo.png" alt="logo" width={150} height={150} />
+      <form onSubmit={handleSignIn} className="flex flex-col space-y-4 text-black">
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
           required
-          className="px-4 py-2 rounded border border-gray-300"
+          className="px-4 py-2 rounded border border-gray-300 text-black"
         />
         <input
           type="password"
@@ -55,7 +57,7 @@ export default function SignIn() {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
           required
-          className="px-4 py-2 rounded border border-gray-300"
+          className="px-4 py-2 rounded border border-gray-300 text-black"
         />
         <button type="submit" className="bg-purple-500 text-white px-4 py-2 rounded-lg">
           Sign In
