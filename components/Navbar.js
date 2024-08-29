@@ -16,7 +16,7 @@ export default function Navbar({ user }) {
   };
 
   return (
-    <nav className="bg-orange-500 p-4">
+    <nav className="bg-white p-4">
       <div className="flex justify-between items-center mb-8">
         {/* Logo */}
         <Link href="/" className="">
@@ -63,8 +63,8 @@ export default function Navbar({ user }) {
           <Image src="/icons/settings.png" alt="Settings" width={50} height={50} className="mr-2" />
           <h1 className="text-black font-bold text-xl">Settings</h1>
         </Link>
-        <Link href="/logout" className="bg-purple-600 py-3 px-6 rounded-full hover:bg-purple-700 transition-colors flex items-center">
-          <h1 className="text-black font-bold text-xl">Sign Out</h1>
+        <Link href="/logout" className="bg-orange-500 py-3 px-6 rounded-full hover:bg-purple-700 transition-colors flex items-center">
+          <h1 className="text-white font-bold text-xl items-center text-center">Sign Out</h1>
         </Link>
       </div>
 
