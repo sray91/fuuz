@@ -22,7 +22,7 @@ export default function WorkoutPlanningPage() {
   useEffect(() => {
     console.log('Selected exercises updated:', selectedExercises);
   }, [selectedExercises]);
-  
+
   async function fetchMuscleGroups() {
     try {
       const { data, error } = await supabase.from('muscle_groups').select('*');
@@ -63,55 +63,40 @@ export default function WorkoutPlanningPage() {
   }
 
   const addExercise = useCallback((exercise) => {
-    console.log('Attempting to add exercise:', exercise);
     setSelectedExercises(prev => {
       const isExerciseInList = prev.some(e => e.exercise_id === exercise.exercise_id);
-      console.log('Is exercise already in list?', isExerciseInList);
-      
       if (isExerciseInList) {
         console.log('Exercise already in list, not adding');
         return prev;
       }
-      
       const newExercise = { ...exercise, sets: 3, reps: 10 };
-      const newList = [...prev, newExercise];
-      console.log('New selected exercises list:', newList);
-      return newList;
+      console.log('Adding new exercise:', newExercise);
+      return [...prev, newExercise];
     });
   }, []);
 
-  function updateExerciseDetails(exerciseId, field, value) {
+  const updateExerciseDetails = useCallback((exerciseId, field, value) => {
     const numericValue = Number(value);
     if (!isNaN(numericValue)) {
       setSelectedExercises(prev =>
         prev.map(ex =>
-          ex.id === exerciseId ? { ...ex, [field]: numericValue } : ex
+          ex.exercise_id === exerciseId ? { ...ex, [field]: numericValue } : ex
         )
       );
     } else {
       console.warn(`Invalid ${field} value: ${value}`);
     }
-  }
+  }, []);
 
   const deleteExercise = useCallback((exerciseId) => {
-    setSelectedExercises(prev => {
-      const filtered = prev.filter(ex => ex.exercise_id !== exerciseId);
-      console.log('Deleted exercise, new list:', filtered);
-      return filtered;
-    });
+    setSelectedExercises(prev => prev.filter(ex => ex.exercise_id !== exerciseId));
   }, []);
 
   async function startWorkout() {
     console.log('Starting workout with:', selectedExercises);
-  
-    // Convert the selected exercises to a string format to pass as a query parameter
-    //const workoutData = JSON.stringify(selectedExercises);
-  
-    // Navigate to the workout session page and pass the workout data as a query parameter
     localStorage.setItem('workoutData', JSON.stringify(selectedExercises));
     router.push('/workout-session');
   }
-  
 
   if (loading) {
     return (
@@ -130,9 +115,9 @@ export default function WorkoutPlanningPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-y-auto">
+    <div className="flex flex-col lg:flex-row h-full overflow-y-auto">
       {/* Muscle Groups Column */}
-      <div className="w-1/3 bg-orange-500 p-6 overflow-y-auto">
+      <div className="w-full lg:w-1/3 bg-orange-500 p-6 mb-4 lg:mb-0">
         <h1 className='text-white text-2xl font-bold mb-4'>Muscle Groups</h1>
         <div className="space-y-2">
           {muscleGroups.map(group => (
@@ -150,7 +135,7 @@ export default function WorkoutPlanningPage() {
       </div>
 
       {/* Exercises Column */}
-      <div className="w-1/3 bg-gray-50 p-6 overflow-y-auto">
+      <div className="w-full lg:w-1/3 bg-gray-50 p-6 mb-4 lg:mb-0">
         {selectedMuscleGroup ? (
           <>
             <h2 className="text-2xl font-bold mb-4 text-blue-300">
@@ -187,7 +172,7 @@ export default function WorkoutPlanningPage() {
       </div>
 
       {/* Selected Exercises Column */}
-      <div className="w-1/3 bg-white p-6 overflow-y-auto">
+      <div className="w-full lg:w-1/3 bg-white p-6">
         <h2 className="text-2xl font-bold mb-4 text-blue-300">Selected Exercises</h2>
         {selectedExercises.length > 0 ? (
           <>
@@ -201,6 +186,7 @@ export default function WorkoutPlanningPage() {
                     onChange={(e) => updateExerciseDetails(exercise.exercise_id, 'sets', e.target.value)}
                     className="w-20 p-2 border rounded text-black"
                     placeholder="Sets"
+                    min="1"
                   />
                   <input
                     type="number"
@@ -208,6 +194,7 @@ export default function WorkoutPlanningPage() {
                     onChange={(e) => updateExerciseDetails(exercise.exercise_id, 'reps', e.target.value)}
                     className="w-20 p-2 border rounded text-black"
                     placeholder="Reps"
+                    min="1"
                   />
                 </div>
                 <button
