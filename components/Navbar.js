@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
-export default function Navbar({ user }) { // Assuming you pass the user prop
+export default function Navbar({ user }) {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleMenu = () => {
@@ -33,8 +33,8 @@ export default function Navbar({ user }) { // Assuming you pass the user prop
         </div>
       </div>
 
-      {/* User Info */}
-      <div className="flex items-center mb-8 lg:mb-0">
+      {/* Desktop User Info */}
+      <div className="hidden lg:flex items-center mb-8">
         <Image
           src={user?.avatar_url || '/avatar-placeholder.png'}
           alt="User Avatar"
@@ -71,7 +71,19 @@ export default function Navbar({ user }) { // Assuming you pass the user prop
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="fixed inset-0 bg-orange-500 z-50 flex flex-col items-center justify-center">
+        <div className="fixed inset-0 bg-orange-500 z-50 flex flex-col items-center justify-center space-y-8">
+          {/* Mobile User Info */}
+          <div className="flex items-center mb-8">
+            <Image
+              src={user?.avatar_url || '/avatar-placeholder.png'}
+              alt="User Avatar"
+              width={50}
+              height={50}
+              className="rounded-full mr-4"
+            />
+            <p className="text-xl text-white">Hello, {user?.email || "User"}</p>
+          </div>
+
           <div className="flex flex-col items-center space-y-8 text-white text-2xl">
             <Link href="/workout" onClick={closeMenu} className="hover:text-gray-200">
               Workout
@@ -85,10 +97,11 @@ export default function Navbar({ user }) { // Assuming you pass the user prop
             <Link href="/settings" onClick={closeMenu} className="hover:text-gray-200">
               Settings
             </Link>
-            <Link href="/logout" onClick={closeMenu} className="hover:text-gray-200">
+            <Link href="/logout" onClick={closeMenu} className="hover:text-gray-200 text-purple-800">
               Sign Out
             </Link>
           </div>
+
           <button onClick={toggleMenu} className="absolute top-4 right-4 text-white focus:outline-none">
             <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>

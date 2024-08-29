@@ -3,6 +3,7 @@ import "./globals.css";
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import Navbar from '@/components/Navbar';
+import { usePathname } from 'next/navigation';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,16 +17,21 @@ export default async function RootLayout({ children }) {
   
   const {
     data: { session },
-  } = await supabase.auth.getSession();
+  } = await supbase.auth.getSession();
 
   const user = session?.user;
+
+  // Check if the current path is under the 'auth' directory
+  const pathname = usePathname();
+
+  const showNavbar = !pathname.startsWith('/auth');
 
   return (
     <html lang="en">
       <body className={`${inter.className} w-full h-full overflow-hidden`}>
         <div className="flex h-full w-full">
-          {/* Use Navbar Component */}
-          <Navbar user={user} />
+          {/* Conditionally Render Navbar */}
+          {showNavbar && <Navbar user={user} />}
           
           {/* Main Content */}
           <div className="flex-1 bg-orange-500 p-6 overflow-y-auto">
