@@ -16,9 +16,9 @@ export default function ActiveWorkoutSessionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [workoutId, setWorkoutId] = useState(null);
-  const router = useRouter();
   const [restTime, setRestTime] = useState(60); // Default rest time in seconds
   const [isResting, setIsResting] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     fetchCurrentWorkout();
@@ -46,40 +46,37 @@ export default function ActiveWorkoutSessionPage() {
       setLoading(false);
       return;
     }
-  
+
     const { workoutId, exercises } = JSON.parse(workoutData);
     setWorkoutId(workoutId);
-  
+
     try {
-      // Fetch the existing workout
       const { data: existingWorkout, error: workoutError } = await supabase
         .from('workouts')
         .select(`
           *,
           workout_exercises (
             *,
-            exercises (*),
-            sets (*)
+            exercises (*)
           )
         `)
         .eq('workout_id', workoutId)
         .single();
-  
+
       if (workoutError) throw workoutError;
-  
+
       console.log('Fetched existing workout:', existingWorkout);
-  
-      // Merge the fetched workout data with the exercises from localStorage
+
       const mergedExercises = existingWorkout.workout_exercises.map(we => {
         const localExercise = exercises.find(e => e.exercise_id === we.exercise_id);
         return {
           ...we,
           ...localExercise,
-          exercises: we.exercises, // Keep the exercises data from the database
-          sets: we.sets || [] // Ensure sets is always an array
+          exercises: we.exercises,
+          sets: we.sets || []
         };
       });
-  
+
       setCurrentWorkout({ ...existingWorkout, exercises: mergedExercises });
     } catch (error) {
       console.error('Error in fetchCurrentWorkout:', error);
@@ -95,7 +92,7 @@ export default function ActiveWorkoutSessionPage() {
       setError('No active workout found. Please start a new workout.');
       return;
     }
-  
+
     const currentExercise = currentWorkout.exercises[currentExerciseIndex];
     
     const newSet = {
@@ -106,9 +103,9 @@ export default function ActiveWorkoutSessionPage() {
       rest_time: null,
       status: 'completed',
     };
-  
+
     console.log('New set object:', JSON.stringify(newSet, null, 2));
-  
+
     const { data, error } = await supabase.from('sets').insert(newSet);
     if (error) {
       console.error('Supabase Error:', error.message, error.details);
@@ -116,18 +113,6 @@ export default function ActiveWorkoutSessionPage() {
     } else {
       console.log('Set logged successfully');
       
-      // Update the local state
-      setCurrentWorkout(prevWorkout => {
-        const updatedExercises = [...prevWorkout.exercises];
-        updatedExercises[currentExerciseIndex] = {
-          ...updatedExercises[currentExerciseIndex],
-          sets: Array.isArray(updatedExercises[currentExerciseIndex].sets) 
-            ? [...updatedExercises[currentExerciseIndex].sets, newSet]
-            : [newSet]
-        };
-        return { ...prevWorkout, exercises: updatedExercises };
-      });
-  
       setCompletedSets(prev => [
         ...prev,
         {
@@ -136,36 +121,21 @@ export default function ActiveWorkoutSessionPage() {
           setNumber: currentSetIndex + 1
         }
       ]);
-  
+
       if (currentSetIndex < currentExercise.sets - 1) {
         setCurrentSetIndex(currentSetIndex + 1);
       } else if (currentExerciseIndex < currentWorkout.exercises.length - 1) {
         setCurrentExerciseIndex(currentExerciseIndex + 1);
         setCurrentSetIndex(0);
-      } else {
-        await finishWorkout();
       }
-      
-      setIsResting(true);
+
       setWeight('');
       setReps('');
+      
+      // Start rest timer
+      setIsResting(true);
+      setRestTime(60); // or whatever default rest time you want
     }
-  }
-
-  async function fetchWorkoutExerciseId(workoutId, exerciseId) {
-    const { data, error } = await supabase
-      .from('workout_exercises')
-      .select('workout_exercise_id')
-      .eq('workout_id', workoutId)
-      .eq('exercise_id', exerciseId)
-      .single();
-
-    if (error) {
-      console.error('Error fetching workout exercise ID:', error);
-      return null;
-    }
-
-    return data.workout_exercise_id;
   }
 
   async function finishWorkout() {
@@ -185,6 +155,7 @@ export default function ActiveWorkoutSessionPage() {
 
     if (error) {
       console.error('Error finishing workout:', error);
+      setError(`Failed to finish workout: ${error.message}`);
       return;
     }
 
@@ -229,26 +200,23 @@ export default function ActiveWorkoutSessionPage() {
       >
         {isResting ? `Rest (${restTime}s)` : 'Log Set'}
       </button>
-  
+
       <div className="mb-4">
         <h2 className="text-xl font-semibold mb-2">Completed Sets</h2>
         {completedSets.map((set, index) => (
-          <div key={set.set_id} className="p-2 border rounded mb-2">
-            <p>{set.exerciseName} - Set {set.setNumber}</p>
+          <div key={set.set_id || index} className="p-2 border rounded mb-2">
+            <p>{set.exerciseName || 'Exercise'} - Set {set.setNumber || index + 1}</p>
             <p>{set.reps} reps @ {set.weight} lbs</p>
           </div>
         ))}
       </div>
-  
-      {currentExerciseIndex === currentWorkout.exercises.length - 1 &&
-        currentSetIndex === currentExercise.sets - 1 && (
-          <button
-            onClick={finishWorkout}
-            className="bg-blue-500 text-white p-2 rounded"
-          >
-            Finish Workout
-          </button>
-        )}
+
+      <button
+        onClick={finishWorkout}
+        className="bg-blue-500 text-white p-2 rounded"
+      >
+        Finish Workout
+      </button>
     </div>
   );
 }
