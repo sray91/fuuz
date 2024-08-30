@@ -218,7 +218,7 @@ export default function WorkoutHistoryPage() {
 
       {workoutToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-4 rounded">
+          <div className="bg-white p-4 rounded text-black">
             <p>Are you sure you want to delete this workout?</p>
             <div className="mt-4 flex justify-end space-x-2">
               <button
