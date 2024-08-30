@@ -21,8 +21,15 @@ export default function ActiveWorkoutSessionPage() {
   const [editableRestTime, setEditableRestTime] = useState('60');
   const router = useRouter();
 
+  // New state for adding exercises
+  const [showAddExercise, setShowAddExercise] = useState(false);
+  const [muscleGroups, setMuscleGroups] = useState([]);
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(null);
+  const [availableExercises, setAvailableExercises] = useState([]);
+
   useEffect(() => {
     fetchCurrentWorkout();
+    fetchMuscleGroups();
   }, []);
 
   useEffect(() => {
@@ -47,10 +54,10 @@ export default function ActiveWorkoutSessionPage() {
       setLoading(false);
       return;
     }
-
+  
     const { workoutId, exercises } = JSON.parse(workoutData);
     setWorkoutId(workoutId);
-
+  
     try {
       const { data: existingWorkout, error: workoutError } = await supabase
         .from('workouts')
@@ -63,21 +70,17 @@ export default function ActiveWorkoutSessionPage() {
         `)
         .eq('workout_id', workoutId)
         .single();
-
+  
       if (workoutError) throw workoutError;
-
+  
       console.log('Fetched existing workout:', existingWorkout);
-
-      const mergedExercises = existingWorkout.workout_exercises.map(we => {
-        const localExercise = exercises.find(e => e.exercise_id === we.exercise_id);
-        return {
-          ...we,
-          ...localExercise,
-          exercises: we.exercises,
-          sets: we.sets || []
-        };
-      });
-
+  
+      const mergedExercises = existingWorkout.workout_exercises.map(we => ({
+        ...we,
+        sets: 3, // Default to 3 sets (managed in component state, not from database)
+        exercises: we.exercises // This correctly references the nested exercises data
+      }));
+  
       setCurrentWorkout({ ...existingWorkout, exercises: mergedExercises });
     } catch (error) {
       console.error('Error in fetchCurrentWorkout:', error);
@@ -87,13 +90,72 @@ export default function ActiveWorkoutSessionPage() {
     }
   }
 
+  async function fetchMuscleGroups() {
+    try {
+      const { data, error } = await supabase.from('muscle_groups').select('*');
+      if (error) throw error;
+      setMuscleGroups(data);
+    } catch (error) {
+      console.error('Error fetching muscle groups:', error);
+      setError('Failed to load muscle groups. Please try again.');
+    }
+  }
+
+  async function fetchExercisesForMuscleGroup(muscleGroupId) {
+    try {
+      const { data, error } = await supabase
+        .from('exercises')
+        .select('*')
+        .eq('muscle_group_id', muscleGroupId);
+      if (error) throw error;
+      setAvailableExercises(data);
+    } catch (error) {
+      console.error('Error fetching exercises:', error);
+      setError('Failed to load exercises. Please try again.');
+    }
+  }
+
+  async function addExerciseToWorkout(exercise) {
+    try {
+      const newWorkoutExercise = {
+        workout_exercise_id: uuidv4(),
+        workout_id: workoutId,
+        exercise_id: exercise.exercise_id,
+        order_in_workout: currentWorkout.exercises.length + 1,
+      };
+  
+      const { data, error } = await supabase
+        .from('workout_exercises')
+        .insert(newWorkoutExercise);
+  
+      if (error) throw error;
+  
+      // Create a new exercise object that includes both workout_exercise and exercise data
+      const newExercise = {
+        ...newWorkoutExercise,
+        exercises: exercise, // This holds the exercise details
+        sets: 3, // Default number of sets (managed in component state, not in database)
+      };
+  
+      setCurrentWorkout(prevWorkout => ({
+        ...prevWorkout,
+        exercises: [...prevWorkout.exercises, newExercise]
+      }));
+  
+      setShowAddExercise(false);
+    } catch (error) {
+      console.error('Error adding exercise:', error);
+      setError(`Failed to add exercise: ${error.message}`);
+    }
+  }
+
   async function logSet() {
     if (!workoutId || !currentWorkout || !currentWorkout.exercises[currentExerciseIndex]) {
       console.error('No current workout or exercise');
       setError('No active workout found. Please start a new workout.');
       return;
     }
-
+  
     const currentExercise = currentWorkout.exercises[currentExerciseIndex];
     
     const newSet = {
@@ -104,9 +166,9 @@ export default function ActiveWorkoutSessionPage() {
       rest_time: parseInt(editableRestTime, 10),
       status: 'completed',
     };
-
+  
     console.log('New set object:', JSON.stringify(newSet, null, 2));
-
+  
     const { data, error } = await supabase.from('sets').insert(newSet);
     if (error) {
       console.error('Supabase Error:', error.message, error.details);
@@ -122,14 +184,15 @@ export default function ActiveWorkoutSessionPage() {
           setNumber: currentSetIndex + 1
         }
       ]);
-
-      if (currentSetIndex < currentExercise.sets - 1) {
+  
+      const totalSets = currentExercise.sets || 3; // Default to 3 if not defined
+      if (currentSetIndex < totalSets - 1) {
         setCurrentSetIndex(currentSetIndex + 1);
       } else if (currentExerciseIndex < currentWorkout.exercises.length - 1) {
         setCurrentExerciseIndex(currentExerciseIndex + 1);
         setCurrentSetIndex(0);
       }
-
+  
       setWeight('');
       setReps('');
       
@@ -220,11 +283,59 @@ export default function ActiveWorkoutSessionPage() {
       </div>
 
       <button
+        onClick={() => setShowAddExercise(true)}
+        className="bg-blue-500 text-white p-2 rounded mb-4 mr-2"
+      >
+        Add Exercise
+      </button>
+
+      <button
         onClick={finishWorkout}
-        className="bg-blue-500 text-white p-2 rounded"
+        className="bg-red-500 text-white p-2 rounded mb-4"
       >
         Finish Workout
       </button>
+
+      {showAddExercise && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-4 rounded max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4 text-black">Add Exercise</h2>
+            <select
+              className="w-full p-2 mb-4 border rounded text-black"
+              onChange={(e) => {
+                setSelectedMuscleGroup(e.target.value);
+                fetchExercisesForMuscleGroup(e.target.value);
+              }}
+            >
+              <option value="">Select Muscle Group</option>
+              {muscleGroups.map(group => (
+                <option key={group.muscle_group_id} value={group.muscle_group_id}>
+                  {group.name}
+                </option>
+              ))}
+            </select>
+            {availableExercises.length > 0 && (
+              <div className="mb-4">
+                {availableExercises.map(exercise => (
+                  <button
+                    key={exercise.exercise_id}
+                    onClick={() => addExerciseToWorkout(exercise)}
+                    className="w-full text-left p-2 hover:bg-gray-100 rounded text-black"
+                  >
+                    {exercise.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button
+              onClick={() => setShowAddExercise(false)}
+              className="w-full bg-gray-300 text-black p-2 rounded"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
