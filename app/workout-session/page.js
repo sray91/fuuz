@@ -16,8 +16,9 @@ export default function ActiveWorkoutSessionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [workoutId, setWorkoutId] = useState(null);
-  const [restTime, setRestTime] = useState(60); // Default rest time in seconds
+  const [restTime, setRestTime] = useState(60);
   const [isResting, setIsResting] = useState(false);
+  const [editableRestTime, setEditableRestTime] = useState('60');
   const router = useRouter();
 
   useEffect(() => {
@@ -32,10 +33,10 @@ export default function ActiveWorkoutSessionPage() {
       }, 1000);
     } else if (restTime === 0) {
       setIsResting(false);
-      setRestTime(60); // Reset to default rest time
+      setRestTime(parseInt(editableRestTime, 10));
     }
     return () => clearInterval(interval);
-  }, [isResting, restTime]);
+  }, [isResting, restTime, editableRestTime]);
 
   async function fetchCurrentWorkout() {
     const workoutData = localStorage.getItem('workoutData');
@@ -100,7 +101,7 @@ export default function ActiveWorkoutSessionPage() {
       workout_exercise_id: currentExercise.workout_exercise_id,
       reps: parseInt(reps, 10),
       weight: parseFloat(weight),
-      rest_time: null,
+      rest_time: parseInt(editableRestTime, 10),
       status: 'completed',
     };
 
@@ -132,9 +133,8 @@ export default function ActiveWorkoutSessionPage() {
       setWeight('');
       setReps('');
       
-      // Start rest timer
       setIsResting(true);
-      setRestTime(60); // or whatever default rest time you want
+      setRestTime(parseInt(editableRestTime, 10));
     }
   }
 
@@ -189,8 +189,15 @@ export default function ActiveWorkoutSessionPage() {
           type="number"
           value={reps}
           onChange={(e) => setReps(e.target.value)}
-          className="w-24 p-2 border rounded text-black"
+          className="w-24 p-2 border rounded mr-2 text-black"
           placeholder="Reps"
+        />
+        <input
+          type="number"
+          value={editableRestTime}
+          onChange={(e) => setEditableRestTime(e.target.value)}
+          className="w-24 p-2 border rounded text-black"
+          placeholder="Rest Time (s)"
         />
       </div>
       <button
@@ -207,6 +214,7 @@ export default function ActiveWorkoutSessionPage() {
           <div key={set.set_id || index} className="p-2 border rounded mb-2">
             <p>{set.exerciseName || 'Exercise'} - Set {set.setNumber || index + 1}</p>
             <p>{set.reps} reps @ {set.weight} lbs</p>
+            <p>Rest time: {set.rest_time}s</p>
           </div>
         ))}
       </div>

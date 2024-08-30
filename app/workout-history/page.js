@@ -14,6 +14,7 @@ export default function WorkoutHistoryPage() {
   const [workoutsOnSelectedDate, setWorkoutsOnSelectedDate] = useState([]);
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [error, setError] = useState(null);
+  const [workoutToDelete, setWorkoutToDelete] = useState(null);
 
   useEffect(() => {
     fetchWorkouts();
@@ -54,7 +55,6 @@ export default function WorkoutHistoryPage() {
 
       console.log("Raw Workouts Data:", JSON.stringify(workoutsData, null, 2));
 
-      // Create a Map to ensure unique workouts by workout_id
       const uniqueWorkouts = new Map();
 
       for (const workout of workoutsData) {
@@ -77,7 +77,7 @@ export default function WorkoutHistoryPage() {
 
       setWorkouts(uniqueWorkoutsArray);
       const dates = uniqueWorkoutsArray.map(workout => new Date(workout.date).toDateString());
-      setWorkoutDates([...new Set(dates)]); // Ensure unique dates
+      setWorkoutDates([...new Set(dates)]);
     } catch (error) {
       console.error('Error fetching workouts:', error.message, error.details);
       setError('Failed to load workout history. Please try again.');
@@ -93,7 +93,7 @@ export default function WorkoutHistoryPage() {
       return new Date(workout.date).toDateString() === selectedDateString;
     });
     setWorkoutsOnSelectedDate(workoutsForTheDay);
-    setSelectedWorkout(null);  // Clear any previously selected workout
+    setSelectedWorkout(null);
   }
 
   function tileContent({ date, view }) {
@@ -115,6 +115,35 @@ export default function WorkoutHistoryPage() {
     setSelectedWorkout(null);
   }
 
+  async function deleteWorkout(workoutId) {
+    try {
+      // Start a Supabase transaction
+      const { data, error } = await supabase.rpc('delete_workout', {
+        workout_id_param: workoutId
+      });
+  
+      if (error) throw error;
+  
+      console.log('Deletion result:', data);
+  
+      // Remove the deleted workout from state
+      setWorkouts(workouts.filter(w => w.workout_id !== workoutId));
+      setWorkoutsOnSelectedDate(workoutsOnSelectedDate.filter(w => w.workout_id !== workoutId));
+      setSelectedWorkout(null);
+      setWorkoutToDelete(null);
+  
+      // Update workoutDates
+      const updatedDates = workouts
+        .filter(w => w.workout_id !== workoutId)
+        .map(w => new Date(w.date).toDateString());
+      setWorkoutDates([...new Set(updatedDates)]);
+  
+    } catch (error) {
+      console.error('Error deleting workout:', error);
+      setError(`Failed to delete workout: ${error.message}`);
+    }
+  }
+
   if (loading) return <div>Loading workout history...</div>;
   if (error) return <div className="text-red-500">{error}</div>;
 
@@ -129,11 +158,19 @@ export default function WorkoutHistoryPage() {
       />
       <div className="flex-1 overflow-y-auto">
         {selectedWorkout ? (
-          <div className="mt-4 p-4 border rounded bg-gray-50 text-black">
+          <div className="mt-4 p-4 border rounded bg-gray-50 text-black relative">
             <button 
               onClick={goBack} 
               className="text-blue-500 hover:text-blue-700 underline mb-4">
               Back to Workout List
+            </button>
+            <button 
+              onClick={() => setWorkoutToDelete(selectedWorkout)}
+              className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
             <h2 className="text-xl font-bold mb-4">
               Workout Details for {new Date(selectedWorkout.date).toLocaleDateString()}
@@ -178,6 +215,28 @@ export default function WorkoutHistoryPage() {
           )
         )}
       </div>
+
+      {workoutToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-4 rounded">
+            <p>Are you sure you want to delete this workout?</p>
+            <div className="mt-4 flex justify-end space-x-2">
+              <button
+                onClick={() => setWorkoutToDelete(null)}
+                className="px-4 py-2 bg-gray-300 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteWorkout(workoutToDelete.workout_id)}
+                className="px-4 py-2 bg-red-500 text-white rounded"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
