@@ -13,6 +13,7 @@ export default function WorkoutHistoryPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [workoutsOnSelectedDate, setWorkoutsOnSelectedDate] = useState([]);
   const [selectedWorkout, setSelectedWorkout] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchWorkouts();
@@ -23,54 +24,66 @@ export default function WorkoutHistoryPage() {
       .from('sets')
       .select('*')
       .eq('workout_exercise_id', workoutExerciseId);
-  
+
     if (error) {
       console.error('Error fetching sets:', error.message, error.details);
       return [];
     }
-  
-    console.log(`Sets for workout_exercise_id ${workoutExerciseId}:`, data); // Debug log
-  
+
+    console.log(`Sets for workout_exercise_id ${workoutExerciseId}:`, data);
+
     return data;
   }  
 
   async function fetchWorkouts() {
-    const { data: workoutsData, error: workoutsError } = await supabase
-      .from('workouts')
-      .select(`
-        workout_id,
-        date,
-        workout_exercises (
-          workout_exercise_id,
-          exercise_id,
-          exercises (name)
-        )
-      `)
-      .order('date', { ascending: false });
+    try {
+      const { data: workoutsData, error: workoutsError } = await supabase
+        .from('workouts')
+        .select(`
+          workout_id,
+          date,
+          workout_exercises (
+            workout_exercise_id,
+            exercise_id,
+            exercises (name)
+          )
+        `)
+        .order('date', { ascending: false });
 
-    if (workoutsError) {
-      console.error('Error fetching workouts:', workoutsError.message, workoutsError.details);
+      if (workoutsError) throw workoutsError;
+
+      console.log("Raw Workouts Data:", JSON.stringify(workoutsData, null, 2));
+
+      // Create a Map to ensure unique workouts by workout_id
+      const uniqueWorkouts = new Map();
+
+      for (const workout of workoutsData) {
+        if (!uniqueWorkouts.has(workout.workout_id)) {
+          const workoutWithSets = {
+            ...workout,
+            workout_exercises: await Promise.all(workout.workout_exercises.map(async exercise => {
+              const sets = await fetchSetsForExercise(exercise.workout_exercise_id);
+              return { ...exercise, sets };
+            }))
+          };
+          uniqueWorkouts.set(workout.workout_id, workoutWithSets);
+        } else {
+          console.warn(`Duplicate workout_id found: ${workout.workout_id}`);
+        }
+      }
+
+      const uniqueWorkoutsArray = Array.from(uniqueWorkouts.values());
+      console.log("Unique Workouts:", JSON.stringify(uniqueWorkoutsArray, null, 2));
+
+      setWorkouts(uniqueWorkoutsArray);
+      const dates = uniqueWorkoutsArray.map(workout => new Date(workout.date).toDateString());
+      setWorkoutDates([...new Set(dates)]); // Ensure unique dates
+    } catch (error) {
+      console.error('Error fetching workouts:', error.message, error.details);
+      setError('Failed to load workout history. Please try again.');
+    } finally {
       setLoading(false);
-      return;
     }
-
-    console.log("Workouts Data:", JSON.stringify(workoutsData, null, 2));
-
-    const workoutsWithSets = await Promise.all(workoutsData.map(async workout => {
-      const workoutWithSets = {
-        ...workout,
-        workout_exercises: await Promise.all(workout.workout_exercises.map(async exercise => {
-          const sets = await fetchSetsForExercise(exercise.workout_exercise_id);
-          return { ...exercise, sets };
-        }))
-      };
-      return workoutWithSets;
-    }));
-
-    setWorkouts(workoutsWithSets);
-    const dates = workoutsWithSets.map(workout => new Date(workout.date).toDateString());
-    setWorkoutDates(dates);
-    setLoading(false);
   }
 
   function handleDateChange(date) {
@@ -90,19 +103,20 @@ export default function WorkoutHistoryPage() {
         return <div className="bg-green-500 w-2 h-2 rounded-full mx-auto mt-1"></div>;
       }
     }
-    return null; // Return null if no custom content
+    return null;
   }
 
   function selectWorkout(workout) {
-    console.log("Workout selected:", workout); // Log selected workout for debugging
+    console.log("Workout selected:", workout);
     setSelectedWorkout(workout);
   }
 
   function goBack() {
-    setSelectedWorkout(null); // Clear selected workout to show the list again
+    setSelectedWorkout(null);
   }
 
   if (loading) return <div>Loading workout history...</div>;
+  if (error) return <div className="text-red-500">{error}</div>;
 
   return (
     <div className="p-4 h-screen flex flex-col">
@@ -110,10 +124,10 @@ export default function WorkoutHistoryPage() {
       <Calendar
         onChange={handleDateChange}
         value={selectedDate}
-        tileContent={tileContent} // Ensure tileContent is defined
+        tileContent={tileContent}
         className="mx-auto text-black mb-4"
       />
-      <div className="flex-1 overflow-y-auto"> {/* This ensures the content is scrollable */}
+      <div className="flex-1 overflow-y-auto">
         {selectedWorkout ? (
           <div className="mt-4 p-4 border rounded bg-gray-50 text-black">
             <button 

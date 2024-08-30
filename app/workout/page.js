@@ -94,8 +94,59 @@ export default function WorkoutPlanningPage() {
 
   async function startWorkout() {
     console.log('Starting workout with:', selectedExercises);
-    localStorage.setItem('workoutData', JSON.stringify(selectedExercises));
-    router.push('/workout-session');
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not found');
+      }
+  
+      const workoutId = uuidv4();
+      const currentDate = new Date();
+      
+      // Create the workout
+      const { data: insertedWorkout, error: workoutError } = await supabase
+        .from('workouts')
+        .insert({
+          workout_id: workoutId,
+          user_id: user.id,
+          date: currentDate.toLocaleString('en-US', { timeZone: 'UTC' }),
+          duration: null,
+          status: 'in_progress',
+        })
+        .select()
+        .single();
+  
+      if (workoutError) throw workoutError;
+  
+      console.log('Inserted workout:', insertedWorkout);
+  
+      // Create workout exercises
+      for (let i = 0; i < selectedExercises.length; i++) {
+        const exercise = selectedExercises[i];
+        const { error: exerciseError } = await supabase
+          .from('workout_exercises')
+          .insert({
+            workout_exercise_id: uuidv4(),
+            workout_id: workoutId,
+            exercise_id: exercise.exercise_id,
+            order_in_workout: i + 1,
+          });
+  
+        if (exerciseError) throw exerciseError;
+      }
+  
+      // Store workout data in localStorage
+      localStorage.setItem('workoutData', JSON.stringify({
+        workoutId: workoutId,
+        exercises: selectedExercises
+      }));
+  
+      router.push('/workout-session');
+    } catch (error) {
+      console.error('Error starting workout:', error);
+      setError(`Failed to start workout: ${error.message}`);
+    }
   }
 
   if (loading) {
