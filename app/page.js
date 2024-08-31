@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserSupabaseClientInstance } from '../utils/supabase-browser';
-import { updateMuscleFreshness } from '@/utils/muscle-freshness'; // Import the new function
+import { updateMuscleFreshness } from '@/utils/muscle-freshness';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const muscleIcons = {
   Quadriceps: '/quads.png',
@@ -63,10 +64,8 @@ export default function DashboardPage() {
   async function updateFreshnessAndFetchMuscleGroups() {
     try {
       setLoading(true);
-      // Update muscle freshness
       await updateMuscleFreshness(user.id);
 
-      // Fetch muscle groups and freshness data
       const { data: muscleGroupsData, error: muscleGroupsError } = await supabase
         .from('muscle_groups')
         .select('*');
@@ -99,42 +98,45 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
-        <div className="text-2xl font-bold text-gray-600">Loading dashboard...</div>
+      <div className="flex items-center justify-center h-screen bg-orange-500">
+        <div className="text-2xl font-bold text-white">Loading dashboard...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
-        <div className="text-xl text-red-600">{error}</div>
+      <div className="flex items-center justify-center h-screen bg-orange-500">
+        <div className="text-xl text-white">{error}</div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Main Content */}
-      <div className="w-3/4 bg-orange-500 p-6 overflow-y-auto">
-        <h2 className="text-4xl font-bold text-white mb-8">Fresh Muscle Groups</h2>
-        <div className="grid grid-cols-2 gap-6">
-          {muscleGroups.map((muscle) => (
-            <div key={muscle.id} className="bg-black rounded-lg p-4 flex items-center justify-between">
-              <div className="flex items-center">
-                <Image
-                  src={muscleIcons[muscle.name]}
-                  alt={muscle.name}
-                  width={64}
-                  height={64}
-                  className="rounded-lg"
-                />
-                <span className="text-white text-xl ml-4">{muscle.name}</span>
-              </div>
-              <div className="text-white text-2xl font-bold">{muscle.freshness}%</div>
-            </div>
-          ))}
-        </div>
+    <div className="flex flex-col h-full bg-orange-500">
+      <div className="p-4">
+        {/* Start Workout button - visible only on mobile */}
+        <Link href="/workout" className="block lg:hidden w-full mb-6">
+          <button className="w-full bg-purple-600 text-white py-3 px-6 rounded-full text-xl font-bold">
+            Start Workout
+          </button>
+        </Link>
+        <h2 className="text-3xl font-bold text-white mb-4">Muscle Groups</h2>
+      </div>
+      <div className="grid grid-cols-2 gap-3 p-3 overflow-y-auto">
+        {muscleGroups.map((muscle) => (
+          <div key={muscle.id} className="bg-black bg-opacity-50 rounded-lg p-3 flex flex-col items-center justify-center">
+            <Image
+              src={muscleIcons[muscle.name]}
+              alt={muscle.name}
+              width={48}
+              height={48}
+              className="mb-2"
+            />
+            <span className="text-white text-sm font-semibold text-center">{muscle.name}</span>
+            <div className="text-white text-lg font-bold mt-1">{muscle.freshness}%</div>
+          </div>
+        ))}
       </div>
     </div>
   );
