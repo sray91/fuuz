@@ -6,191 +6,157 @@ import { createBrowserSupabaseClientInstance } from '@/utils/supabase-browser';
 export default function ProfilePage() {
   const [supabase] = useState(() => createBrowserSupabaseClientInstance());
   const [user, setUser] = useState(null)
+  const [name, setName] = useState('')
   const [maxLifts, setMaxLifts] = useState({})
   const [exercises, setExercises] = useState([])
   const [loading, setLoading] = useState(true)
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
   const [error, setError] = useState(null)
+  const [editingExercise, setEditingExercise] = useState(null)
+  const [editValue, setEditValue] = useState('')
 
   useEffect(() => {
-    async function fetchData() {
+    async function initializeProfile() {
       try {
+        console.log("Initializing profile...");
         await fetchUserData()
         await fetchExercises()
         await fetchMaxLifts()
       } catch (error) {
-        console.error("Error fetching data:", error)
-        setError("Failed to load profile data. Please try again.")
+        console.error("Error initializing profile:", error)
+        setError("Failed to initialize profile. Please try again.")
       } finally {
         setLoading(false)
       }
     }
-    fetchData()
-
-    // Timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      setLoading(false)
-      setError("Loading timed out. Please refresh the page.")
-    }, 15000) // 15 seconds timeout
-
-    return () => clearTimeout(timeoutId)
+    initializeProfile()
   }, [])
 
   async function fetchUserData() {
-    try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (userError) throw userError
-      console.log("Fetched user:", user)
-      setUser(user)
-      setEmail(user?.email || '')
-      if (user) {
-        const { data, error } = await supabase
-          .from('users')
-          .select('name')
-          .eq('user_id', user.id)
-          .single()
-        if (error) throw error
-        console.log("Fetched user data:", data)
-        setName(data?.name || '')
-      }
-    } catch (error) {
-      console.error("Error fetching user data:", error)
-      throw error
-    }
+    console.log("Fetching user data...");
+    const { data: { user }, error } = await supabase.auth.getUser()
+    if (error) throw error
+    setUser(user)
+    console.log(`User data fetched: ${JSON.stringify(user)}`);
+
+    const { data: userData, error: profileError } = await supabase
+      .from('users')
+      .select('name')
+      .eq('user_id', user.id)
+      .single()
+    if (profileError) throw profileError
+    setName(userData?.name || '')
+    console.log(`User profile data fetched: ${JSON.stringify(userData)}`);
   }
 
   async function fetchExercises() {
-    try {
-      const { data, error } = await supabase
-        .from('exercises')
-        .select('*')
-      if (error) throw error
-      console.log("Fetched exercises:", data)
-      setExercises(data)
-    } catch (error) {
-      console.error('Error fetching exercises:', error)
-      throw error
-    }
+    console.log("Fetching exercises...");
+    const { data, error } = await supabase.from('exercises').select('*')
+    if (error) throw error
+    setExercises(data)
+    console.log(`Exercises fetched: ${JSON.stringify(data)}`);
   }
 
   async function fetchMaxLifts() {
-    try {
-      if (!user) return;
-      const { data, error } = await supabase
-        .from('user_max_lifts')
-        .select('*')
-        .eq('user_id', user.id)
-      if (error) throw error
-      console.log("Fetched max lifts:", data)
-      const maxLiftsObject = data.reduce((acc, lift) => {
-        acc[lift.exercise_id] = lift.max_weight
-        return acc
-      }, {})
-      setMaxLifts(maxLiftsObject)
-    } catch (error) {
-      console.error('Error fetching max lifts:', error)
-      throw error
+    if (!user) {
+      console.log("No user available, skipping max lifts fetch");
+      return;
     }
-  }
-
-  async function updateUserInfo() {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .upsert({ user_id: user.id, name, email })
-      if (error) throw error
-      console.log('User info updated successfully')
-    } catch (error) {
-      console.error('Error updating user info:', error)
-      setError("Failed to update user info. Please try again.")
-    }
+    console.log(`Fetching max lifts for user ${user.id}...`);
+    const { data, error } = await supabase
+      .from('user_max_lifts')
+      .select('*')
+      .eq('user_id', user.id)
+    if (error) throw error
+    const maxLiftsObject = data.reduce((acc, lift) => {
+      acc[lift.exercise_id] = lift.max_weight
+      return acc
+    }, {})
+    setMaxLifts(maxLiftsObject)
+    console.log(`Max lifts fetched: ${JSON.stringify(maxLiftsObject)}`);
   }
 
   async function updateMaxLift(exerciseId, weight) {
     try {
-      const { error } = await supabase
+      console.log(`Updating max lift for exercise ${exerciseId} to ${weight}`);
+      const { data, error } = await supabase
         .from('user_max_lifts')
-        .upsert({ user_id: user.id, exercise_id: exerciseId, max_weight: weight })
+        .upsert({ 
+          user_id: user.id, 
+          exercise_id: exerciseId,
+          max_weight: parseFloat(weight) || 0
+        })
       if (error) throw error
-      setMaxLifts(prev => ({ ...prev, [exerciseId]: weight }))
-      console.log(`Max lift updated for exercise ${exerciseId}: ${weight}`)
+      console.log(`Update response: ${JSON.stringify(data)}`);
+      setMaxLifts(prev => {
+        const newMaxLifts = { ...prev, [exerciseId]: parseFloat(weight) || 0 };
+        console.log(`New max lifts state: ${JSON.stringify(newMaxLifts)}`);
+        return newMaxLifts;
+      })
+      setEditingExercise(null)
     } catch (error) {
       console.error('Error updating max lift:', error)
+      console.log(`Error updating max lift: ${error.message}`);
       setError("Failed to update max lift. Please try again.")
     }
   }
 
-  if (loading) {
-    return (
-      <div className="p-4">
-        <h1 className="text-2xl font-bold mb-4">Loading profile...</h1>
-        <p>User: {user ? 'Loaded' : 'Not loaded'}</p>
-        <p>Exercises: {exercises.length} loaded</p>
-        <p>Max Lifts: {Object.keys(maxLifts).length} loaded</p>
-      </div>
-    )
+  function openEditPopup(exercise) {
+    setEditingExercise(exercise)
+    setEditValue(maxLifts[exercise.id] || '')
+    console.log(`Opened edit popup for exercise ${exercise.id}`);
   }
 
-  if (error) {
-    return (
-      <div className="p-4">
-        <h1 className="text-2xl font-bold mb-4">Error</h1>
-        <p className="text-red-500">{error}</p>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="mt-4 bg-blue-500 text-white p-2 rounded"
-        >
-          Retry
-        </button>
-      </div>
-    )
-  }
+  if (loading) return <div className="p-4">Loading profile...</div>
+  if (error) return <div className="p-4 text-red-500">{error}</div>
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">User Profile</h1>
-      <div className="mb-4">
-        <label htmlFor="name" className="block mb-2 text-black">Name:</label>
-        <input
-          id="name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full p-2 border rounded text-black"
-        />
-      </div>
-      <div className="mb-4">
-        <label htmlFor="email" className="block mb-2 text-black">Email:</label>
-        <input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-2 border rounded text-black"
-        />
-      </div>
-      <button
-        onClick={updateUserInfo}
-        className="bg-blue-500 text-white p-2 rounded mb-4"
-      >
-        Update User Info
-      </button>
-
+      <h1 className="text-3xl font-bold mb-4 text-purple-800">User Profile</h1>
+      <p className="mb-2">Name: {name}</p>
+      <p className="mb-4">Email: {user?.email}</p>
+      
       <h2 className="text-xl font-semibold mt-4 mb-2">Max Lifts</h2>
-      {exercises.map((exercise) => (
-        <div key={exercise.id} className="mb-2">
-          <label htmlFor={`max-${exercise.id}`} className="mr-2 text-black">{exercise.name}:</label>
-          <input
-            id={`max-${exercise.id}`}
-            type="number"
-            value={maxLifts[exercise.id] || ''}
-            onChange={(e) => updateMaxLift(exercise.id, e.target.value)}
-            className="w-20 p-1 border rounded text-black"
-          />
-          <span className="ml-2">lbs</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {exercises.map((exercise) => (
+          <div key={exercise.id} className="flex items-center justify-between p-2 border rounded bg-white text-black">
+            <span>{exercise.name}: {maxLifts[exercise.id] || 0} lbs</span>
+            <button
+              onClick={() => openEditPopup(exercise)}
+              className="bg-purple-800 text-white px-2 py-1 rounded"
+            >
+              Edit
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {editingExercise && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-4 rounded max-w-sm w-full">
+            <h3 className="text-lg font-semibold mb-2 text-black">Edit {editingExercise.name}</h3>
+            <input
+              type="number"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              className="w-full p-2 border rounded mb-2 text-black"
+            />
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setEditingExercise(null)}
+                className="bg-gray-300 text-black px-4 py-2 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => updateMaxLift(editingExercise.id, editValue)}
+                className="bg-green-500 text-black px-4 py-2 rounded"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
         </div>
-      ))}
+      )}
     </div>
   )
 }
