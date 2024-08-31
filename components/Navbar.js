@@ -42,7 +42,7 @@ export default function Navbar({ user }) {
           height={50}
           className="rounded-full mr-4"
         />
-        <p className="text-xl text-black">Hello, {user?.email || "User"}</p>
+        <p className="text-xl text-black">Hello, {user?.name || "User"}</p>
       </div>
 
       {/* Desktop Menu */}
@@ -59,7 +59,7 @@ export default function Navbar({ user }) {
           <Image src="/icons/goals.png" alt="Goals" width={50} height={50} className="mr-2" />
           <h1 className="text-black font-bold text-xl">Goals</h1>
         </Link>
-        <Link href="/settings" className="bg-purple-600 py-3 px-6 rounded-full hover:bg-purple-700 transition-colors flex items-center">
+        <Link href="/profile" className="bg-purple-600 py-3 px-6 rounded-full hover:bg-purple-700 transition-colors flex items-center">
           <Image src="/icons/settings.png" alt="Settings" width={50} height={50} className="mr-2" />
           <h1 className="text-black font-bold text-xl">Settings</h1>
         </Link>
@@ -93,7 +93,7 @@ export default function Navbar({ user }) {
             <Link href="/goals" onClick={closeMenu} className="hover:text-gray-200">
               Goals
             </Link>
-            <Link href="/settings" onClick={closeMenu} className="hover:text-gray-200">
+            <Link href="/profile" onClick={closeMenu} className="hover:text-gray-200">
               Settings
             </Link>
             <Link href="/logout" onClick={closeMenu} className="hover:text-gray-200 text-purple-800">
