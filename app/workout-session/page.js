@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createBrowserSupabaseClientInstance } from '@/utils/supabase-browser';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
+import { updateMuscleFreshness } from '@/utils/muscle-freshness'; // Import the new function
 
 export default function ActiveWorkoutSessionPage() {
   const [supabase] = useState(() => createBrowserSupabaseClientInstance());
@@ -207,23 +208,30 @@ export default function ActiveWorkoutSessionPage() {
       return;
     }
 
-    const { error } = await supabase
-      .from('workouts')
-      .update({
-        status: 'completed',
-        end_time: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
-        duration: null, // You can calculate and set the duration here if needed
-      })
-      .eq('workout_id', workoutId);
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
 
-    if (error) {
+      const { error } = await supabase
+        .from('workouts')
+        .update({
+          status: 'completed',
+          end_time: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
+          duration: null, // You can calculate and set the duration here if needed
+        })
+        .eq('workout_id', workoutId);
+
+      if (error) throw error;
+
+      // Update muscle freshness after completing the workout
+      await updateMuscleFreshness(user.id);
+
+      console.log('Workout completed and muscle freshness updated!');
+      router.push('/workout-history');
+    } catch (error) {
       console.error('Error finishing workout:', error);
       setError(`Failed to finish workout: ${error.message}`);
-      return;
     }
-
-    console.log('Workout completed!');
-    router.push('/workout-history');
   }
 
   if (loading) return <div>Loading workout... Please wait.</div>;

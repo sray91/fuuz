@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from 'next/navigation';
 import { createBrowserSupabaseClientInstance } from '../utils/supabase-browser';
+import { updateMuscleFreshness } from '@/utils/muscle-freshness'; // Import the new function
 import Image from 'next/image';
 
 const muscleIcons = {
@@ -30,7 +31,7 @@ export default function DashboardPage() {
   const [muscleGroups, setMuscleGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const router = useRouter(); // Initialize useRouter
+  const router = useRouter();
 
   useEffect(() => {
     fetchUser();
@@ -38,20 +39,16 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (user) {
-      fetchMuscleGroups();
+      updateFreshnessAndFetchMuscleGroups();
     }
   }, [user]);
 
   async function fetchUser() {
     try {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
+      const { data: { user }, error } = await supabase.auth.getUser();
       if (error) throw error;
 
       if (!user) {
-        // If no user is found, redirect to the sign-in page
         router.push('/auth/signin');
       } else {
         setUser(user);
@@ -59,15 +56,17 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error fetching user:', error);
       setError('Failed to load user data. Please try again.');
-      // Redirect to sign-in if there's an error fetching the user
       router.push('/auth/signin');
-    } finally {
-      setLoading(false);
     }
   }
 
-  async function fetchMuscleGroups() {
+  async function updateFreshnessAndFetchMuscleGroups() {
     try {
+      setLoading(true);
+      // Update muscle freshness
+      await updateMuscleFreshness(user.id);
+
+      // Fetch muscle groups and freshness data
       const { data: muscleGroupsData, error: muscleGroupsError } = await supabase
         .from('muscle_groups')
         .select('*');
@@ -91,7 +90,7 @@ export default function DashboardPage() {
 
       setMuscleGroups(muscleGroupsWithFreshness);
     } catch (error) {
-      console.error('Error fetching muscle groups:', error);
+      console.error('Error updating freshness and fetching muscle groups:', error);
       setError('Failed to load muscle group data. Please try again.');
     } finally {
       setLoading(false);
