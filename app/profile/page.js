@@ -17,10 +17,7 @@ export default function ProfilePage() {
   useEffect(() => {
     async function initializeProfile() {
       try {
-        console.log("Initializing profile...");
         await fetchUserData()
-        await fetchExercises()
-        await fetchMaxLifts()
       } catch (error) {
         console.error("Error initializing profile:", error)
         setError("Failed to initialize profile. Please try again.")
@@ -31,37 +28,37 @@ export default function ProfilePage() {
     initializeProfile()
   }, [])
 
+  useEffect(() => {
+    if (user) {
+      fetchExercises()
+      fetchMaxLifts()
+    }
+  }, [user])
+
   async function fetchUserData() {
-    console.log("Fetching user data...");
     const { data: { user }, error } = await supabase.auth.getUser()
     if (error) throw error
     setUser(user)
-    console.log(`User data fetched: ${JSON.stringify(user)}`);
 
-    const { data: userData, error: profileError } = await supabase
-      .from('users')
-      .select('name')
-      .eq('user_id', user.id)
-      .single()
-    if (profileError) throw profileError
-    setName(userData?.name || '')
-    console.log(`User profile data fetched: ${JSON.stringify(userData)}`);
+    if (user) {
+      const { data: userData, error: profileError } = await supabase
+        .from('users')
+        .select('name')
+        .eq('user_id', user.id)
+        .single()
+      if (profileError) throw profileError
+      setName(userData?.name || '')
+    }
   }
 
   async function fetchExercises() {
-    console.log("Fetching exercises...");
     const { data, error } = await supabase.from('exercises').select('*')
     if (error) throw error
     setExercises(data)
-    console.log(`Exercises fetched: ${JSON.stringify(data)}`);
   }
 
   async function fetchMaxLifts() {
-    if (!user) {
-      console.log("No user available, skipping max lifts fetch");
-      return;
-    }
-    console.log(`Fetching max lifts for user ${user.id}...`);
+    if (!user) return;
     const { data, error } = await supabase
       .from('user_max_lifts')
       .select('*')
@@ -72,13 +69,11 @@ export default function ProfilePage() {
       return acc
     }, {})
     setMaxLifts(maxLiftsObject)
-    console.log(`Max lifts fetched: ${JSON.stringify(maxLiftsObject)}`);
   }
 
   async function updateMaxLift(exerciseId, weight) {
     try {
-      console.log(`Updating max lift for exercise ${exerciseId} to ${weight}`);
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('user_max_lifts')
         .upsert({ 
           user_id: user.id, 
@@ -86,28 +81,25 @@ export default function ProfilePage() {
           max_weight: parseFloat(weight) || 0
         })
       if (error) throw error
-      console.log(`Update response: ${JSON.stringify(data)}`);
-      setMaxLifts(prev => {
-        const newMaxLifts = { ...prev, [exerciseId]: parseFloat(weight) || 0 };
-        console.log(`New max lifts state: ${JSON.stringify(newMaxLifts)}`);
-        return newMaxLifts;
-      })
+      setMaxLifts(prev => ({
+        ...prev,
+        [exerciseId]: parseFloat(weight) || 0
+      }))
       setEditingExercise(null)
     } catch (error) {
       console.error('Error updating max lift:', error)
-      console.log(`Error updating max lift: ${error.message}`);
       setError("Failed to update max lift. Please try again.")
     }
   }
 
   function openEditPopup(exercise) {
     setEditingExercise(exercise)
-    setEditValue(maxLifts[exercise.id] || '')
-    console.log(`Opened edit popup for exercise ${exercise.id}`);
+    setEditValue(maxLifts[exercise.exercise_id] || '')
   }
 
   if (loading) return <div className="p-4">Loading profile...</div>
   if (error) return <div className="p-4 text-red-500">{error}</div>
+  if (!user) return <div className="p-4">Please sign in to view your profile.</div>
 
   return (
     <div className="p-4">
@@ -118,8 +110,8 @@ export default function ProfilePage() {
       <h2 className="text-xl font-semibold mt-4 mb-2">Max Lifts</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {exercises.map((exercise) => (
-          <div key={exercise.id} className="flex items-center justify-between p-2 border rounded bg-white text-black">
-            <span>{exercise.name}: {maxLifts[exercise.id] || 0} lbs</span>
+          <div key={exercise.exercise_id} className="flex items-center justify-between p-2 border rounded bg-white text-black">
+            <span>{exercise.name}: {maxLifts[exercise.exercise_id] !== undefined ? `${maxLifts[exercise.exercise_id]} lbs` : 'N/A'}</span>
             <button
               onClick={() => openEditPopup(exercise)}
               className="bg-purple-800 text-white px-2 py-1 rounded"
@@ -148,7 +140,7 @@ export default function ProfilePage() {
                 Cancel
               </button>
               <button
-                onClick={() => updateMaxLift(editingExercise.id, editValue)}
+                onClick={() => updateMaxLift(editingExercise.exercise_id, editValue)}
                 className="bg-green-500 text-black px-4 py-2 rounded"
               >
                 Confirm
