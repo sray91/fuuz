@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createBrowserSupabaseClientInstance } from '@/utils/supabase-browser';
-import { getMuscleGroupMFRI } from '@/utils/mfri';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -12,7 +11,6 @@ export default function WorkoutPlanningPage() {
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(null);
   const [exercises, setExercises] = useState([]);
   const [selectedExercises, setSelectedExercises] = useState([]);
-  const [muscleGroupMFRIs, setMuscleGroupMFRIs] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const router = useRouter();

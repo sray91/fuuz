@@ -68,6 +68,7 @@ export async function updateMuscleFreshness(userId) {
 }
 
 export async function getUserMuscleFreshness(userId) {
+  console.log('Getting muscle freshness for user:', userId);
   try {
     const { data, error } = await supabase
       .from('muscle_freshness')
@@ -75,15 +76,13 @@ export async function getUserMuscleFreshness(userId) {
         *,
         muscle_groups (name)
       `)
-      .eq('user_id', userId)
+      .eq('user_id', userId);
 
-    if (error) {
-      throw new Error(`Error fetching muscle freshness: ${error.message}`)
-    }
-
-    return data
+    if (error) throw error;
+    console.log('Fetched muscle freshness data:', data);
+    return data;
   } catch (error) {
-    console.error('Error in getUserMuscleFreshness:', error)
-    throw error
+    console.error('Error in getUserMuscleFreshness:', error);
+    throw error;
   }
 }

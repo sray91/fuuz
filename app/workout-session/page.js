@@ -170,13 +170,37 @@ export default function ActiveWorkoutSessionPage() {
   
     console.log('New set object:', JSON.stringify(newSet, null, 2));
   
-    const { data, error } = await supabase.from('sets').insert(newSet);
-    if (error) {
-      console.error('Supabase Error:', error.message, error.details);
-      setError(`Failed to log set: ${error.message}`);
-    } else {
+    try {
+      // Insert the new set
+      const { data, error } = await supabase.from('sets').insert(newSet);
+      if (error) throw error;
+  
       console.log('Set logged successfully');
-      
+  
+      // Update user_max if necessary
+      if (parseFloat(weight) > (currentExercise.exercises.user_max || 0)) {
+        const { error: updateError } = await supabase
+          .from('exercises')
+          .update({ user_max: parseFloat(weight) })
+          .eq('exercise_id', currentExercise.exercises.exercise_id);
+  
+        if (updateError) {
+          console.error('Error updating user_max:', updateError);
+        } else {
+          console.log('Updated user_max for exercise');
+          // Update the local state to reflect the new user_max
+          setCurrentWorkout(prevWorkout => ({
+            ...prevWorkout,
+            exercises: prevWorkout.exercises.map(ex =>
+              ex.exercise_id === currentExercise.exercises.exercise_id
+                ? { ...ex, exercises: { ...ex.exercises, user_max: parseFloat(weight) } }
+                : ex
+            )
+          }));
+        }
+      }
+  
+      // Update local state
       setCompletedSets(prev => [
         ...prev,
         {
@@ -186,6 +210,7 @@ export default function ActiveWorkoutSessionPage() {
         }
       ]);
   
+      // Move to next set or exercise
       const totalSets = currentExercise.sets || 3; // Default to 3 if not defined
       if (currentSetIndex < totalSets - 1) {
         setCurrentSetIndex(currentSetIndex + 1);
@@ -194,38 +219,53 @@ export default function ActiveWorkoutSessionPage() {
         setCurrentSetIndex(0);
       }
   
+      // Reset input fields
       setWeight('');
       setReps('');
       
+      // Start rest timer
       setIsResting(true);
       setRestTime(parseInt(editableRestTime, 10));
+  
+    } catch (error) {
+      console.error('Error logging set:', error);
+      setError(`Failed to log set: ${error.message}`);
     }
   }
 
   async function finishWorkout() {
     if (!workoutId) {
       console.error('No current workout to finish');
+      setError('No active workout found. Please start a new workout.');
       return;
     }
-
+  
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
-
+  
+      const startTime = new Date(currentWorkout.start_time);
+      const endTime = new Date();
+      const duration = endTime - startTime; // Duration in milliseconds
+  
       const { error } = await supabase
         .from('workouts')
         .update({
           status: 'completed',
-          end_time: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
-          duration: null, // You can calculate and set the duration here if needed
+          end_time: endTime.toISOString(),
+          duration: duration,
         })
         .eq('workout_id', workoutId);
-
+  
       if (error) throw error;
-
-      // Update muscle freshness after completing the workout
+  
+      console.log('Workout completed. Updating muscle freshness...');
       await updateMuscleFreshness(user.id);
-
+      console.log('Muscle freshness updated successfully');
+  
+      // Clear local storage
+      localStorage.removeItem('workoutData');
+  
       console.log('Workout completed and muscle freshness updated!');
       router.push('/workout-history');
     } catch (error) {
